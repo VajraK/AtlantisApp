@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  baserow:
+    container_name: baserow
+    image: baserow/baserow:latest
+    ports:
+      - "3000:80"
+    environment:
+      - BASEROW_PUBLIC_URL=http://localhost:3000
+      - DISABLE_VOLUME_CHECK=yes
+    volumes:
+      - baserow_data:/baserow/data
+
+volumes:
+  baserow_data:
