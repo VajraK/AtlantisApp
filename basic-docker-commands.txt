@@ -1,0 +1,8 @@
+*List all the containers
+docker ps -a
+
+*Stop all the containers
+docker stop $(docker ps -a -q)
+
+*Remove all the containers
+docker rm $(docker ps -a -q)
