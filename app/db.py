@@ -1,18 +1,23 @@
 import requests
 from config import (
     BASEROW_API_TOKEN, BASEROW_API_URL,
-    MANDATES_TABLE_ID, VENTURES_TABLE_ID
+    OUTREACH_DATABASE_ID
 )
 
 HEADERS = {"Authorization": f"Token {BASEROW_API_TOKEN}"}
 
-def get_all_mandates():
-    """Get all mandates from Mandates table"""
-    return _get_table_data(MANDATES_TABLE_ID)
-
-def get_all_ventures():
-    """Get all ventures from Ventures table"""
-    return _get_table_data(VENTURES_TABLE_ID)
+def get_tables_in_outreach_database():
+    """Get all tables in the Outreach database (filtered from all-tables)."""
+    url = f"{BASEROW_API_URL}/api/database/tables/all-tables/"
+    response = requests.get(url, headers=HEADERS)
+    response.raise_for_status()
+    all_tables = response.json()
+    outreach_tables = [
+        {"id": t["id"], "name": t["name"]}
+        for t in all_tables
+        if t["database_id"] == int(OUTREACH_DATABASE_ID)
+    ]
+    return outreach_tables
 
 def _get_table_data(table_id):
     if not table_id:

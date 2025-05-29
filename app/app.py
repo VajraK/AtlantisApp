@@ -1,8 +1,7 @@
 import streamlit as st
 from config import (
     APP_PASSWORD,
-    WEBSITES_VENTURES_TABLE_ID,
-    WEBSITES_INVESTORS_TABLE_ID
+    OUTREACH_DATABASE_ID
 )
 import db
 import scraper
@@ -21,6 +20,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Ensure Outreach DB is available
+if not OUTREACH_DATABASE_ID:
+    st.error("Missing Outreach DB ID in environment.")
+    st.stop()
+
 # Authentication
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
@@ -35,24 +39,43 @@ if not st.session_state.authenticated:
 
 st.title("Web Analyzer")
 
-# Mode selection
+# Initial session state
 if "selected_mode" not in st.session_state:
     st.session_state.selected_mode = None
-    st.session_state.table_id = None
+if "websites_table" not in st.session_state:
+    st.session_state.websites_table = None
+if "info_table" not in st.session_state:
+    st.session_state.info_table = None
 
-if st.session_state.selected_mode is None:
+# Mode + Table selection
+if st.session_state.selected_mode is None or not st.session_state.websites_table or not st.session_state.info_table:
+    st.subheader("Choose Mode and Tables")
     mode = st.radio("Select mode:", ["Ventures", "Investors"])
+
+    with st.spinner("Loading tables from Outreach DB..."):
+        tables = db.get_tables_in_outreach_database()
+
+    if not tables:
+        st.error("No tables found in Outreach DB.")
+        st.stop()
+
+    table_options = {f"{t['name']} (ID: {t['id']})": t['id'] for t in tables}
+
+    websites_table = st.selectbox("Select Websites table", list(table_options.keys()))
+    info_table = st.selectbox("Select Info table", list(table_options.keys()))
+
     if st.button("Confirm Selection"):
         st.session_state.selected_mode = mode
-        st.session_state.table_id = (
-            WEBSITES_VENTURES_TABLE_ID if mode == "Ventures" 
-            else WEBSITES_INVESTORS_TABLE_ID
-        )
-        logger.info(f"Selected {mode} mode, using table ID: {st.session_state.table_id}")
+        st.session_state.websites_table = table_options[websites_table]
+        st.session_state.info_table = table_options[info_table]
         st.rerun()
+
     st.stop()
 
-table_id = st.session_state.table_id
+# Use selected tables from session
+table_id = st.session_state.websites_table
+info_table_id = st.session_state.info_table
+mode = st.session_state.selected_mode
 
 # Main processing
 row = db.get_next_row(table_id)
@@ -64,14 +87,14 @@ if row:
     url = row.get("Website")
     if url:
         current_row_id = row["id"]
-        
+
         # Check if we need fresh data
         if ("current_row_id" not in st.session_state or 
             st.session_state.current_row_id != current_row_id):
-            
+
             logger.info(f"Starting new scrape for URL: {url}")
             scraped_text, emails = scraper.scrape_website(url)
-            
+
             if isinstance(scraped_text, str) and scraped_text.startswith("ERROR:"):
                 logger.error(f"Scraping failed: {scraped_text}")
                 st.error(f"Scraping error: {scraped_text}")
@@ -110,20 +133,17 @@ if row:
             logger.info("Starting GPT analysis...")
             with st.spinner("Analyzing with GPT..."):
                 try:
-                    # Get relevant data based on mode
-                    if st.session_state.selected_mode == "Ventures":
-                        relevant_data = db.get_all_mandates()
-                        logger.info(f"Loaded {len(relevant_data)} mandates")
-                    else:
-                        relevant_data = db.get_all_ventures()
-                        logger.info(f"Loaded {len(relevant_data)} ventures")
+                    relevant_data = db._get_table_data(info_table_id)
+                    logger.info(f"Loaded {len(relevant_data)} entries from info table")
 
                     st.session_state.gpt_answer = openai_api.ask_gpt_about_company(
                         st.session_state.scraped_text,
                         st.session_state.emails,
                         row.get("Email", ""),
-                        st.session_state.selected_mode,
-                        relevant_data
+                        mode,
+                        relevant_data,
+                        row.get("Location", ""),       # add Location from the row here
+                        row.get("Total Funding Amount", "")  # add Funding amount here
                     )
                     logger.info("GPT analysis completed")
                 except Exception as e:
@@ -134,7 +154,7 @@ if row:
         if st.session_state.get("gpt_answer"):
             st.subheader("GPT Analysis:")
             st.write(st.session_state.gpt_answer)
-            
+
             # Add email sending section with more details
             if st.button("Send Email"):
                 with st.spinner("Sending email..."):

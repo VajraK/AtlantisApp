@@ -6,11 +6,8 @@ load_dotenv()
 APP_PASSWORD = os.getenv("APP_PASSWORD", "letmein")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Table IDs
-VENTURES_TABLE_ID = os.getenv("VENTURES_TABLE_ID")
-MANDATES_TABLE_ID = os.getenv("MANDATES_TABLE_ID")
-WEBSITES_VENTURES_TABLE_ID = os.getenv("WEBSITES_VENTURES_TABLE_ID")
-WEBSITES_INVESTORS_TABLE_ID = os.getenv("WEBSITES_INVESTORS_TABLE_ID")
+# Database ID
+OUTREACH_DATABASE_ID = os.getenv("OUTREACH_DATABASE_ID")
 
 # Baserow config
 BASEROW_API_URL = os.getenv("BASEROW_API_URL", "http://localhost:3000")

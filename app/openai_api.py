@@ -1,7 +1,7 @@
 import openai
 from config import OPENAI_API_KEY
 import logging
-from typing import Optional
+from prompts import base_prompt, ventures_prompt, investors_prompt
 
 # Set up logging
 logging.basicConfig(
@@ -12,62 +12,28 @@ logger = logging.getLogger(__name__)
 
 openai.api_key = OPENAI_API_KEY
 
-def ask_gpt_about_company(scraped_text: str, emails: list, row_email: str, 
-                         mode: str, relevant_data: list) -> str:
-    """Analyze company and generate appropriate email based on mode"""
+def ask_gpt_about_company(scraped_text: str, emails: list, row_email: str,
+                          mode: str, relevant_data: list, location: str, funding: str) -> str:
     try:
         if not scraped_text:
             return "ERROR: No scraped text available for analysis"
-            
-        base_prompt = f"""
-You are an expert matchmaking assistant for an advisory firm. Analyze this company:
-
-Scraped text:
-\"\"\"{scraped_text[:3000]}\"\"\"
-
-Found emails: {', '.join(emails) if emails else 'None'}
-Database email: {row_email if row_email else 'None'}
-"""
+        
+        prompt_intro = base_prompt(scraped_text, emails, row_email, location, funding)
+        
         if mode == "Ventures":
-            analysis_task = f"""
-REQUIRED ANALYSIS:
-1. Identify which mandates are top 1-2 matches this company's profile (format: [Acronym - Notes]):
-{_format_mandates(relevant_data)}
- 
-2. Draft email to company contact proposing these matches (without mentioning their acronyms)
-
-EMAIL GUIDELINES:
-- Start with brief introduction (say that my name is Vajra Kantor and I am a reasearcher with Atlantis Pathways, an advisiory firm that is now connecting ventures with investors)
-- Reference specific mandates that match their business, mention that we are partnered with these investors
-- Keep under 300 words
-- Professional but enthusiastic tone
-- Say Dear [Venture-name] Team and sign as Vajra Kantor, Atlantis Pathways
-"""
-        else:  # Investors
-            analysis_task = f"""
-REQUIRED ANALYSIS:
-1. Review these ventures (format: [Acronym - Industry - Notes - Raising]):
-{_format_ventures(relevant_data)}
-
-2. Identify which ventures match this investor's focus areas
-3. For top 1-2 matches, explain why they're relevant  
-4. Draft email to investor proposing ventures
-
-EMAIL GUIDELINES:  
-- Start with brief introduction (say that my name is Vajra Kantor and I am a reasearcher with Atlantis Pathways, an advisiory firm that is now connecting ventures with investors)
-- Reference specific ventures matching their interests
-- Keep under 300 words
-- Professional but enthusiastic tone
-- Include placeholders for [CONTACT NAME] and sign as Vajra Kantor, Atlantis Pathways
-"""
+            formatted_mandates = _format_mandates(relevant_data)
+            task = ventures_prompt(formatted_mandates)
+        else:
+            formatted_ventures = _format_ventures(relevant_data)
+            task = investors_prompt(formatted_ventures)
 
         response = openai.chat.completions.create(
             model="gpt-4.1",
             messages=[
-                {"role": "system", "content": base_prompt},
-                {"role": "user", "content": analysis_task}
+                {"role": "system", "content": prompt_intro},
+                {"role": "user", "content": task}
             ],
-            max_tokens=600,
+            max_tokens=1000,
             temperature=0.7,
         )
         return response.choices[0].message.content.strip()
