@@ -37,11 +37,8 @@ def get_next_row(table_id):
             return row
     return None
 
-def save_scraped_content(table_id, row_id, content):
-    data = {
-        "Note3": content[:10000],
-        "STATUS": "Contacted"
-    }
+def update_cell(table_id, row_id, field_name, value):
+    data = {field_name: value}
     url = f"{BASEROW_API_URL}/api/database/rows/table/{table_id}/{row_id}/?user_field_names=true"
     response = requests.patch(url, headers={**HEADERS, "Content-Type": "application/json"}, json=data)
     response.raise_for_status()

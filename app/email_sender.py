@@ -1,21 +1,43 @@
 import smtplib
+from email.utils import formataddr
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from config import (
+    SENDER_NAME,
     SMTP_SERVER,
     SMTP_PORT,
     SMTP_USERNAME,
     SMTP_PASSWORD,
-    TEST_EMAIL_ADDRESS
+    TEST_EMAIL_ADDRESS,
+    TEST_MODE
 )
 import logging
 from socket import error as socket_error
+import json
+
 
 logger = logging.getLogger(__name__)
 
-def send_email(subject: str, body: str, to_email: str = None) -> tuple:
-    """Send email using SMTP. Returns (success: bool, message: str)"""
-    if not to_email:
+def send_email(gpt_result, row=None) -> tuple:
+    """Send email using GPT result (JSON string or dict). Returns (success: bool, message: str)"""
+    try:
+        # Parse if string
+        if isinstance(gpt_result, str):
+            gpt_data = json.loads(gpt_result)
+        else:
+            gpt_data = gpt_result
+    except Exception as e:
+        error_msg = f"Invalid GPT result format: {e}"
+        logger.error(error_msg)
+        return False, error_msg
+
+    # Default subject/body/email
+    subject = gpt_data.get("subject", "")
+    body = gpt_data.get("email_body", "")
+    to_email = gpt_data.get("selected_email", "")
+
+    # In test mode, override recipient and subject
+    if TEST_MODE:
         to_email = TEST_EMAIL_ADDRESS
     
     # Validate configuration
@@ -23,8 +45,8 @@ def send_email(subject: str, body: str, to_email: str = None) -> tuple:
     if not SMTP_SERVER: missing_config.append("SMTP_SERVER")
     if not SMTP_USERNAME: missing_config.append("SMTP_USERNAME")
     if not SMTP_PASSWORD: missing_config.append("SMTP_PASSWORD")
-    if not to_email: missing_config.append("TEST_EMAIL_ADDRESS")
-    
+    if not to_email: missing_config.append("Recipient Email")
+
     if missing_config:
         error_msg = f"Missing SMTP configuration: {', '.join(missing_config)}"
         logger.error(error_msg)
@@ -33,7 +55,7 @@ def send_email(subject: str, body: str, to_email: str = None) -> tuple:
     try:
         # Create message
         msg = MIMEMultipart()
-        msg['From'] = SMTP_USERNAME
+        msg['From'] = formataddr((SENDER_NAME, SMTP_USERNAME))
         msg['To'] = to_email
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'plain'))

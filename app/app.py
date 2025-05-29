@@ -1,12 +1,12 @@
 import streamlit as st
-from config import (
-    APP_PASSWORD,
-    OUTREACH_DATABASE_ID
-)
+import time
+import os
+import logging
+import json
+from config import APP_PASSWORD, OUTREACH_DATABASE_ID, TEST_MODE
 import db
 import scraper
 import openai_api
-import logging
 import email_sender
 
 # Set up logging
@@ -20,12 +20,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Ensure Outreach DB is available
+# --- Auth ---
 if not OUTREACH_DATABASE_ID:
     st.error("Missing Outreach DB ID in environment.")
     st.stop()
 
-# Authentication
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
@@ -37,18 +36,30 @@ if not st.session_state.authenticated:
     else:
         st.stop()
 
-st.title("Web Analyzer")
+st.title("Autonomous Web Analyzer")
 
-# Initial session state
+if TEST_MODE:
+    st.markdown(
+        "<div style='color: white; background-color: red; padding: 10px; text-align: center; font-weight: bold;'>"
+        "⚠️ TEST MODE IS ENABLED ⚠️"
+        "</div>",
+        unsafe_allow_html=True
+    )
+
+# --- Init session state ---
 if "selected_mode" not in st.session_state:
     st.session_state.selected_mode = None
 if "websites_table" not in st.session_state:
     st.session_state.websites_table = None
 if "info_table" not in st.session_state:
     st.session_state.info_table = None
+if "delay_minutes" not in st.session_state:
+    st.session_state.delay_minutes = 10
+if "autorun" not in st.session_state:
+    st.session_state.autorun = False
 
-# Mode + Table selection
-if st.session_state.selected_mode is None or not st.session_state.websites_table or not st.session_state.info_table:
+# --- Setup UI ---
+if st.session_state.selected_mode is None:
     st.subheader("Choose Mode and Tables")
     mode = st.radio("Select mode:", ["Ventures", "Investors"])
 
@@ -63,115 +74,97 @@ if st.session_state.selected_mode is None or not st.session_state.websites_table
 
     websites_table = st.selectbox("Select Websites table", list(table_options.keys()))
     info_table = st.selectbox("Select Info table", list(table_options.keys()))
+    delay_minutes = st.number_input("Delay between runs (minutes)", min_value=1, value=10)
+    autorun = st.checkbox("Auto-run scraping + analysis + email loop")
 
     if st.button("Confirm Selection"):
         st.session_state.selected_mode = mode
         st.session_state.websites_table = table_options[websites_table]
         st.session_state.info_table = table_options[info_table]
+        st.session_state.delay_minutes = delay_minutes
+        st.session_state.autorun = autorun
         st.rerun()
 
     st.stop()
 
-# Use selected tables from session
-table_id = st.session_state.websites_table
-info_table_id = st.session_state.info_table
-mode = st.session_state.selected_mode
+# --- Main loop logic ---
+def process_next_row():
+    row = db.get_next_row(st.session_state.websites_table)
+    if not row:
+        st.info("No more unprocessed rows.")
+        return
 
-# Main processing
-row = db.get_next_row(table_id)
-if row:
-    logger.info(f"Processing row: {row.get('id')}")
-    st.write("Next row to process:")
-    st.write(row)
-
+    row_id = row.get("id")
     url = row.get("Website")
-    if url:
-        current_row_id = row["id"]
 
-        # Check if we need fresh data
-        if ("current_row_id" not in st.session_state or 
-            st.session_state.current_row_id != current_row_id):
+    if not url:
+        logger.warning("No website found for row.")
+        return
 
-            logger.info(f"Starting new scrape for URL: {url}")
-            scraped_text, emails = scraper.scrape_website(url)
+    logger.info(f"Scraping: {url}")
+    scraped_text, emails = scraper.scrape_website(url)
 
-            if isinstance(scraped_text, str) and scraped_text.startswith("ERROR:"):
-                logger.error(f"Scraping failed: {scraped_text}")
-                st.error(f"Scraping error: {scraped_text}")
-                st.stop()
-            else:
-                logger.info("Scraping completed successfully")
-                st.session_state.scraped_text = scraped_text
-                st.session_state.emails = emails
-                st.session_state.current_row_id = current_row_id
-                st.session_state.gpt_answer = None
-                st.session_state.gpt_analysis_requested = False
+    if isinstance(scraped_text, str) and scraped_text.startswith("ERROR"):
+        logger.error(f"Scraping failed for row {row_id}")
+        return
+
+    relevant_data = db._get_table_data(st.session_state.info_table)
+
+    logger.info("Analyzing with GPT...")
+    gpt_result = openai_api.ask_gpt_about_company(
+        scraped_text,
+        emails,
+        row.get("Email", ""),
+        st.session_state.selected_mode,
+        relevant_data,
+        row.get("Location", ""),
+        row.get("Total Funding Amount", "")
+    )
+
+    logger.info("Saving GPT result to Note3")
+    db.update_cell(st.session_state.websites_table, row_id, "Note3", str(gpt_result))
+
+    # Parse GPT result to check score before sending email
+    try:
+        if isinstance(gpt_result, str):
+            gpt_data = json.loads(gpt_result)
         else:
-            logger.info("Using cached scraped data")
-            scraped_text = st.session_state.scraped_text
-            emails = st.session_state.emails
+            gpt_data = gpt_result
+    except Exception as e:
+        logger.error(f"Failed to parse GPT result JSON: {e}")
+        st.error(f"Failed to parse GPT result JSON: {e}")
+        return
 
-        # Display scraped content
-        st.text_area("Scraped Content", scraped_text[:2000], height=300)
+    # Extract highest score from matches list
+    matches = gpt_data.get("matches", [])
+    if matches:
+        score = max(match.get("score", 0) for match in matches)
+    else:
+        score = 0
 
-        if emails:
-            st.success(f"Found {len(emails)} emails:")
-            for email in emails:
-                st.write(email)
+    logger.info(f"Highest score from matches: {score}")
+
+    if score >= 7:
+        logger.info("Score >= 7, sending email...")
+        success, msg = email_sender.send_email(gpt_result, row)
+        if success:
+            logger.info("Email sent, marking as Contacted")
+            db.update_cell(st.session_state.websites_table, row_id, "STATUS", "Contacted")
         else:
-            st.info("No emails found.")
+            logger.error(f"Email send failed: {msg}")
+            st.error(f"Email send failed: {msg}")
+            # Optionally do not update STATUS here or set to error state
+    else:
+        logger.info("Score < 7, not sending email, marking as Not Contacted Yet")
+        db.update_cell(st.session_state.websites_table, row_id, "STATUS", "not contacted yet")
 
-        # Save to DB button
-        if st.button("Save to DB"):
-            logger.info("Saving data to database...")
-            db.save_scraped_content(table_id, row["id"], scraped_text)
-            st.success("Saved to DB")
-            st.rerun()
+    st.success(f"Row {row_id} processed successfully!")
 
-        # GPT Analysis Section
-        if st.button("Analyze with GPT"):
-            logger.info("Starting GPT analysis...")
-            with st.spinner("Analyzing with GPT..."):
-                try:
-                    relevant_data = db._get_table_data(info_table_id)
-                    logger.info(f"Loaded {len(relevant_data)} entries from info table")
-
-                    st.session_state.gpt_answer = openai_api.ask_gpt_about_company(
-                        st.session_state.scraped_text,
-                        st.session_state.emails,
-                        row.get("Email", ""),
-                        mode,
-                        relevant_data,
-                        row.get("Location", ""),       # add Location from the row here
-                        row.get("Total Funding Amount", "")  # add Funding amount here
-                    )
-                    logger.info("GPT analysis completed")
-                except Exception as e:
-                    st.session_state.gpt_answer = f"Analysis failed: {str(e)}"
-                    logger.error(f"GPT analysis failed: {str(e)}")
-            st.rerun()
-
-        if st.session_state.get("gpt_answer"):
-            st.subheader("GPT Analysis:")
-            st.write(st.session_state.gpt_answer)
-
-            # Add email sending section with more details
-            if st.button("Send Email"):
-                with st.spinner("Sending email..."):
-                    success, message = email_sender.send_email(
-                        subject=f"Potential Match from Atlantis Pathways",
-                        body=st.session_state.gpt_answer
-                    )
-                    if success:
-                        st.success(message)
-                    else:
-                        st.error(f"Failed to send email: {message}")
-                        st.info("Please check your SMTP configuration in .env file")
-
-            if st.button("Clear Analysis"):
-                st.session_state.gpt_answer = None
-                st.rerun()
-
+# --- Autorun Loop ---
+if st.session_state.autorun:
+    process_next_row()
+    st.write(f"Waiting {st.session_state.delay_minutes} minutes until next run...")
+    time.sleep(st.session_state.delay_minutes * 60)
+    st.rerun()
 else:
-    logger.info("No more unprocessed rows")
-    st.info("No more unprocessed rows.")
+    st.info("Autorun is off. Enable it from setup.")
