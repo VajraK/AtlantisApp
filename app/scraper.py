@@ -26,11 +26,22 @@ def scrape_website(url: str) -> Tuple[str, List[str]]:
 
     def crawl_page(page_url: str) -> None:
         """Crawl a single page and collect content/emails."""
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Connection": "keep-alive",
+        }
+
         try:
             logger.info(f"Attempting to crawl: {page_url}")
-            response = requests.get(page_url, timeout=10)
+            response = requests.get(page_url, headers=headers, timeout=10)
             response.raise_for_status()
-            
+
             soup = BeautifulSoup(response.text, "html.parser")
             page_text = soup.get_text(separator="\n", strip=True)
             text_content.append(page_text)

@@ -104,9 +104,14 @@ def process_next_row():
     logger.info(f"Scraping: {url}")
     scraped_text, emails = scraper.scrape_website(url)
 
-    if isinstance(scraped_text, str) and scraped_text.startswith("ERROR"):
-        logger.error(f"Scraping failed for row {row_id}")
-        return
+    if not scraped_text or (isinstance(scraped_text, str) and scraped_text.startswith("ERROR")):
+        logger.warning(f"Scraping failed for row {row_id}, using Description field instead.")
+        scraped_text = row.get("Description", "")
+
+        if not scraped_text:
+            logger.error("No scraped text or description available for analysis.")
+            st.error("ERROR: No scraped text or description available for analysis.")
+            return
 
     relevant_data = db._get_table_data(st.session_state.info_table)
 
