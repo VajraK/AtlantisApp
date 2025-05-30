@@ -62,10 +62,10 @@ def send_email(gpt_result, row=None) -> tuple:
 
         if SMTP_PORT == 465:
             # Implicit SSL
-            server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=10)
+            server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30)
         else:
             # Explicit SSL with STARTTLS (typically port 587)
-            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10)
+            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=30)
             server.starttls()
 
         try:

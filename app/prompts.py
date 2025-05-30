@@ -31,7 +31,7 @@ Mandates to evaluate (format: [Acronym - Notes]):
 
 3. Write a short professional email proposing a connection, **only if there are strong matches (score ≥ 7)**.
 - Start with: "Dear [Venture-name] Team,"
-- Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm connecting ventures with investors.
+- Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm connecting ventures with investors, and that we would be interested to potentially connecting them with investors in our network.
 - Reference relevant matched mandates (score ≥ 7) ((do not mention acronyms)).
 - Keep under 300 words.
 - Professional and enthusiastic.
@@ -80,7 +80,7 @@ Ventures to evaluate (format: [Acronym - Industry - Notes - Raising]):
 
 3. Write a short professional email proposing a connection, **only if there are strong matches (score ≥ 7)**.
 - Start with: "Dear [CONTACT NAME],"
-- Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm connecting ventures with investors.
+- Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm connecting ventures with investors, and that we would be interested in exploring potential partnership between us and them.
 - Reference relevant matched ventures (score ≥ 7) ((do not mention acronyms)).
 - Keep under 300 words.
 - Professional and enthusiastic.

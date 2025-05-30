@@ -42,21 +42,20 @@ def ask_gpt_about_company(scraped_text: str, emails: list, row_email: str,
         return f"GPT Error: {str(e)}"
 
 def _format_mandates(mandates):
-    # mandates is a list of dicts with keys like 'Name (Acronym)' and 'Notes'
+    """Format mandates data with None checks and proper string handling"""
     lines = []
     for m in mandates[:10]:
-        acronym = m.get('Name (Acronym)', '').strip()
-        notes = m.get('Notes', '').strip().replace('\n', ' ')
+        acronym = m.get('Name (Acronym)', '').strip() if m.get('Name (Acronym)') else ''
+        notes = m.get('Notes', '').strip() if m.get('Notes') else ''
         lines.append(f"- {acronym} - {notes}")
     return "\n".join(lines)
 
 def _format_ventures(ventures):
-    # ventures is a list of dicts with keys like 'Name (Acronym)' and 'Industry'
     lines = []
     for v in ventures[:10]:
-        acronym = v.get('Name (Acronym)', '').strip()
-        industry = v.get('Industry', '').strip()
-        notes = v.get('Notes', '').strip()
-        raising = v.get('Raising', '').strip()
+        acronym = v.get('Name (Acronym)', '').strip() if v.get('Name (Acronym)') else ''
+        industry = v.get('Industry', '').strip() if v.get('Industry') else ''
+        notes = v.get('Notes', '').strip() if v.get('Notes') else ''
+        raising = v.get('Raising', '').strip() if v.get('Raising') else ''
         lines.append(f"- {acronym} - {industry} - {notes} - {raising}")
     return "\n".join(lines)

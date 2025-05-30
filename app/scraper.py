@@ -39,7 +39,7 @@ def scrape_website(url: str) -> Tuple[str, List[str]]:
 
         try:
             logger.info(f"Attempting to crawl: {page_url}")
-            response = requests.get(page_url, headers=headers, timeout=10)
+            response = requests.get(page_url, headers=headers, timeout=20)
             response.raise_for_status()
 
             soup = BeautifulSoup(response.text, "html.parser")
