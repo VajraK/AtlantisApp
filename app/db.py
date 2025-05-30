@@ -60,7 +60,7 @@ def update_cell(table_id, row_id, field_name, value):
 def create_main_table_row(
     table_id: int,
     row_data: dict,
-    api_url: str = "http://localhost:3000"
+    api_url: str = {BASEROW_API_URL}
 ) -> dict:
     """
     Creates a new row in the specified Baserow table.
