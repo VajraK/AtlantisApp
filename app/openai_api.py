@@ -58,22 +58,29 @@ def ask_gpt_about_company(scraped_text: str, emails: list, row_email: str,
         logger.error(f"GPT Error: {str(e)}")
         return f"GPT Error: {str(e)}"
 
+def _safe_strip(value):
+    if isinstance(value, list):
+        # join list elements with spaces or commas, then strip
+        return " ".join(str(x) for x in value).strip()
+    elif isinstance(value, str):
+        return value.strip()
+    else:
+        return ''  # or str(value).strip() if you prefer
+
 def _format_mandates(mandates):
-    """Format mandates data with None checks and proper string handling"""
     lines = []
     for m in mandates[:10]:
-        acronym = m.get('Name (Acronym)', '').strip() if m.get('Name (Acronym)') else ''
-        notes = m.get('Notes', '').strip() if m.get('Notes') else ''
+        acronym = _safe_strip(m.get('Name (Acronym)', ''))
+        notes = _safe_strip(m.get('Notes', ''))
         lines.append(f"- {acronym} - {notes}")
     return "\n".join(lines)
 
 def _format_ventures(ventures):
-    """Format ventures data for GPT prompt"""
     lines = []
     for v in ventures[:10]:
-        acronym = v.get('Name (Acronym)', '').strip() if v.get('Name (Acronym)') else ''
-        industry = v.get('Industry', '').strip() if v.get('Industry') else ''
-        notes = v.get('Notes', '').strip() if v.get('Notes') else ''
-        raising = v.get('Raising', '').strip() if v.get('Raising') else ''
+        acronym = _safe_strip(v.get('Name (Acronym)', ''))
+        industry = _safe_strip(v.get('Industry', ''))
+        notes = _safe_strip(v.get('Notes', ''))
+        raising = _safe_strip(v.get('Raising', ''))
         lines.append(f"- {acronym} - {industry} - {notes} - {raising}")
     return "\n".join(lines)
