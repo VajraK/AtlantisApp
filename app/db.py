@@ -9,7 +9,7 @@ HEADERS = {"Authorization": f"Token {BASEROW_API_TOKEN}"}
 
 
 def get_row(table_id, row_id):
-    url = f"http://localhost:3000/api/database/rows/table/{table_id}/{row_id}/?user_field_names=true"
+    url = f"{BASEROW_API_URL}api/database/rows/table/{table_id}/{row_id}/?user_field_names=true"
 
     response = requests.get(url, headers=HEADERS)
 
