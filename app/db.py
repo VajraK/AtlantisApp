@@ -33,7 +33,8 @@ def get_next_row(table_id):
     response.raise_for_status()
     rows = response.json().get("results", [])
     for row in rows:
-        if row.get("STATUS") != "Contacted":
+        status = row.get("STATUS")
+        if status is None or status.strip() == "":
             return row
     return None
 
