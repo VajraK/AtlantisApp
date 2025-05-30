@@ -33,6 +33,7 @@ Mandates to evaluate (format: [Acronym - Notes]):
 - Start with: "Dear [Venture-name] Team,"
 - Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm connecting ventures with investors, and that we would be interested to potentially connecting them with investors in our network.
 - Reference relevant matched mandates (score ≥ 7) ((do not mention acronyms)).
+- Say that they can find out more about our current investor mandates on our website (atlantispathways.com).
 - Keep under 300 words.
 - Professional and enthusiastic.
 
@@ -82,6 +83,7 @@ Ventures to evaluate (format: [Acronym - Industry - Notes - Raising]):
 - Start with: "Dear [CONTACT NAME],"
 - Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm connecting ventures with investors, and that we would be interested in exploring potential partnership between us and them.
 - Reference relevant matched ventures (score ≥ 7) ((do not mention acronyms)).
+- Say that they can find out more about our current partnered ventures on our website (atlantispathways.com).
 - Keep under 300 words.
 - Professional and enthusiastic.
 

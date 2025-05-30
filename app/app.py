@@ -1,4 +1,3 @@
-import streamlit as st
 import time
 import os
 import logging
@@ -8,21 +7,29 @@ from datetime import datetime
 from pydantic import BaseModel, ValidationError, EmailStr
 from typing import List
 
-from config import APP_PASSWORD, OUTREACH_DATABASE_ID, TEST_MODE
+from config import OUTREACH_DATABASE_ID, TEST_MODE, SENDER_ACCOUNTS, MAIN_VENTURES_TABLE_ID, MAIN_INVESTORS_TABLE_ID
 import db
 import scraper
 import openai_api
 import email_sender
+
+# Path to one directory above this script
+log_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'app.log')
+
+# Optional: Remove existing handlers (avoids duplication if re-run in same session)
+for handler in logging.root.handlers[:]:
+    logging.root.removeHandler(handler)
 
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("app.log"),
+        logging.FileHandler(log_path),
         logging.StreamHandler()
     ]
 )
+
 logger = logging.getLogger(__name__)
 
 # --- Pydantic models for GPT output validation ---
@@ -42,93 +49,73 @@ class GPTOutput(BaseModel):
 
 WEEK_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
-# --- Auth ---
-if not OUTREACH_DATABASE_ID:
-    st.error("Missing Outreach DB ID in environment.")
-    logger.critical("Environment variable OUTREACH_DATABASE_ID is not set.")
-    st.stop()
+# --- Helper functions ---
 
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
+def prompt_select(prompt, options):
+    print(prompt)
+    for i, option in enumerate(options, start=1):
+        print(f"{i}. {option}")
+    while True:
+        choice = input(f"Enter number (1-{len(options)}): ").strip()
+        if choice.isdigit() and 1 <= int(choice) <= len(options):
+            return options[int(choice)-1]
+        else:
+            print("Invalid choice, please try again.")
 
-if not st.session_state.authenticated:
-    password = st.text_input("Enter password", type="password")
-    if password == APP_PASSWORD:
-        st.session_state.authenticated = True
-        st.rerun()
-    else:
-        st.stop()
+def prompt_multiselect(prompt, options, default_selected):
+    print(prompt)
+    print("Enter numbers separated by commas (e.g. 1,3,5)")
+    print("Available options:")
+    for i, option in enumerate(options, start=1):
+        mark = "(default)" if option in default_selected else ""
+        print(f"{i}. {option} {mark}")
+    while True:
+        user_input = input(f"Selected (default {','.join(default_selected)}): ").strip()
+        if user_input == "":
+            return default_selected
+        selections = user_input.split(",")
+        selected = []
+        valid = True
+        for sel in selections:
+            sel = sel.strip()
+            if sel.isdigit() and 1 <= int(sel) <= len(options):
+                selected.append(options[int(sel)-1])
+            else:
+                print(f"Invalid selection: {sel}")
+                valid = False
+                break
+        if valid and selected:
+            return selected
+        else:
+            print("Please enter valid numbers separated by commas.")
 
-st.title("Autonomous Web Analyzer")
+def choose_sender_account():
+    if not SENDER_ACCOUNTS:
+        raise ValueError("No sender accounts configured in SENDER_ACCOUNTS.")
 
-if TEST_MODE:
-    st.markdown(
-        "<div style='color: white; background-color: red; padding: 10px; text-align: center; font-weight: bold;'>"
-        "⚠️ TEST MODE IS ENABLED ⚠️"
-        "</div>",
-        unsafe_allow_html=True
-    )
+    print("Choose a sender account:")
+    for i, account in enumerate(SENDER_ACCOUNTS):
+        print(f"{i + 1}. {account.get('name')} <{account.get('email')}>")
 
-# --- Init session state ---
-st.session_state.setdefault("selected_mode", None)
-st.session_state.setdefault("websites_table", None)
-st.session_state.setdefault("info_table", None)
-st.session_state.setdefault("delay_minutes", 10)
-st.session_state.setdefault("autorun", False)
-st.session_state.setdefault("work_start_hour", 9)
-st.session_state.setdefault("work_end_hour", 21)
-st.session_state.setdefault("work_days", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
+    while True:
+        choice = input(f"Enter number (1-{len(SENDER_ACCOUNTS)}): ")
+        if choice.isdigit():
+            idx = int(choice) - 1
+            if 0 <= idx < len(SENDER_ACCOUNTS):
+                return SENDER_ACCOUNTS[idx]
+        print("Invalid choice. Try again.")
 
-# --- Setup UI ---
-if st.session_state.selected_mode is None:
-    st.subheader("Choose Mode and Tables")
-    mode = st.radio("Select mode:", ["Ventures", "Investors"])
 
-    try:
-        with st.spinner("Loading tables from Outreach DB..."):
-            tables = db.get_tables_in_outreach_database()
-    except Exception as e:
-        logger.exception("Failed to load tables from Outreach DB")
-        st.error(f"Failed to load tables: {e}")
-        st.stop()
-
-    if not tables:
-        st.error("No tables found in Outreach DB.")
-        logger.warning("No tables found in Outreach DB.")
-        st.stop()
-
-    table_options = {f"{t['name']} (ID: {t['id']})": t['id'] for t in tables}
-
-    websites_table = st.selectbox("Select Websites table", list(table_options.keys()))
-    info_table = st.selectbox("Select Info table", list(table_options.keys()))
-    delay_minutes = st.number_input("Delay between runs (minutes)", min_value=1, value=10)
-
-    col1, col2 = st.columns(2)
-    with col1:
-        work_start_hour = st.number_input("Work Start Hour (CET)", min_value=0, max_value=23, value=9)
-    with col2:
-        work_end_hour = st.number_input("Work End Hour (CET)", min_value=0, max_value=23, value=21)
-
-    work_days = st.multiselect(
-        "Select Working Days",
-        WEEK_DAYS,
-        default=st.session_state.work_days
-    )
-
-    if st.button("Confirm Selection"):
-        st.session_state.selected_mode = mode
-        st.session_state.websites_table = table_options[websites_table]
-        st.session_state.info_table = table_options[info_table]
-        st.session_state.delay_minutes = delay_minutes
-        st.session_state.work_start_hour = work_start_hour
-        st.session_state.work_end_hour = work_end_hour
-        st.session_state.work_days = work_days
-        st.session_state.autorun = True
-        st.rerun()
-
-    st.stop()
-
-# --- Helper function to check active hours and days ---
+def prompt_int(prompt, min_val, max_val, default):
+    while True:
+        user_input = input(f"{prompt} [{default}]: ").strip()
+        if user_input == "":
+            return default
+        if user_input.isdigit():
+            val = int(user_input)
+            if min_val <= val <= max_val:
+                return val
+        print(f"Invalid input. Enter an integer between {min_val} and {max_val}.")
 
 def is_within_active_hours(start_hour, end_hour, working_days):
     tz = pytz.timezone("Europe/Paris")  # CET timezone with DST awareness
@@ -145,33 +132,35 @@ def is_within_active_hours(start_hour, end_hour, working_days):
         # Overnight span (e.g. start=22, end=6)
         return current_hour >= start_hour or current_hour < end_hour
 
-# --- Main loop logic ---
-def process_next_row():
+def process_next_row(selected_mode, websites_table, info_table, sender_account):
     try:
-        row = db.get_next_row(st.session_state.websites_table)
+        row = db.get_next_row(websites_table)
     except Exception as e:
         logger.exception("Error fetching next row")
-        st.error(f"Error fetching next row: {e}")
-        return
+        print(f"Error fetching next row: {e}")
+        return False
 
     if not row:
-        st.info("No more unprocessed rows.")
-        return
+        logger.info("No more unprocessed rows.")
+        print("No more unprocessed rows.")
+        return False
 
     row_id = row.get("id")
     url = row.get("Website")
 
     if not url:
         logger.warning(f"Row {row_id}: No website provided.")
-        return
+        print(f"Row {row_id}: No website provided.")
+        return True
 
     logger.info(f"Row {row_id}: Scraping {url}")
+    print(f"Row {row_id}: Scraping {url}")
     try:
         scraped_text, emails = scraper.scrape_website(url)
     except Exception as e:
         logger.exception(f"Row {row_id}: Scraping failed for {url}")
-        st.error(f"Scraping failed: {e}")
-        return
+        print(f"Scraping failed: {e}")
+        return True
 
     if not scraped_text or (isinstance(scraped_text, str) and scraped_text.startswith("ERROR")):
         logger.warning(f"Row {row_id}: Scraping failed. Using Description field.")
@@ -185,53 +174,56 @@ def process_next_row():
         word_count = len(scraped_text.split())
         if word_count < 10:
             logger.error(f"Row {row_id}: Description also too short ({word_count} words).")
-            st.error("ERROR: No sufficient text available for analysis.")
-            return
+            print("ERROR: No sufficient text available for analysis.")
+            return True
     elif word_count > 1000:
         logger.info(f"Row {row_id}: Trimming scraped content from {word_count} to 1000 words.")
         scraped_text = " ".join(scraped_text.split()[:1000])
 
     try:
-        relevant_data = db._get_table_data(st.session_state.info_table)
+        relevant_data = db._get_table_data(info_table)
     except Exception as e:
         logger.exception("Failed to load info table data")
-        st.error(f"Error loading info table: {e}")
-        return
+        print(f"Error loading info table: {e}")
+        return True
 
     logger.info(f"Row {row_id}: Analyzing with GPT...")
+    print(f"Row {row_id}: Analyzing with GPT...")
     try:
         gpt_result = openai_api.ask_gpt_about_company(
             scraped_text,
             emails,
             row.get("Email", ""),
-            st.session_state.selected_mode,
+            selected_mode,
             relevant_data,
             row.get("Location", ""),
             row.get("Total Funding Amount", "")
         )
     except Exception as e:
         logger.exception(f"Row {row_id}: GPT analysis failed.")
-        st.error(f"GPT analysis failed: {e}")
-        return
+        print(f"GPT analysis failed: {e}")
+        return True
 
     # Validate GPT output with Pydantic
     try:
-        # gpt_result expected to be JSON string
+        # gpt_result expected to be JSON string or dict
         gpt_json = gpt_result if isinstance(gpt_result, dict) else json.loads(gpt_result)
         validated_output = GPTOutput(**gpt_json)
     except (ValidationError, json.JSONDecodeError) as e:
         logger.error(f"Row {row_id}: GPT output validation failed: {e}")
         try:
-            db.update_cell(st.session_state.websites_table, row_id, "STATUS", "Skipped")
+            db.update_cell(websites_table, row_id, "STATUS", "Skipped")
+            json_string = json.dumps(gpt_json, ensure_ascii=False)
+            db.update_cell(websites_table, row_id, "Note3", json_string)
         except Exception as ex:
-            logger.error(f"Row {row_id}: Failed to mark row as Skipped after validation error: {ex}")
-        st.error(f"GPT output validation failed: {e}")
-        return
-
+            logger.error(f"Row {row_id}: Failed to mark row as Skipped after validation error or Note3: {ex}")
+        print(f"GPT output validation failed: {e}")
+        return True
 
     matches = validated_output.matches
     score = max((match.score for match in matches), default=0)
     logger.info(f"Row {row_id}: Highest score from matches: {score}")
+    print(f"Row {row_id}: Highest score from matches: {score}")
 
     should_send_email = (
         score >= 7 and 
@@ -242,51 +234,172 @@ def process_next_row():
 
     if should_send_email:
         logger.info(f"Row {row_id}: Score >=7 and valid email fields present, sending email...")
+        print(f"Row {row_id}: Score >=7 and valid email fields present, sending email...")
         try:
+
             success, msg = email_sender.send_email({
                 "selected_email": validated_output.selected_email,
                 "subject": validated_output.subject,
                 "email_body": validated_output.email_body
-            }, row)
+            }, row, sender_account)
         except Exception as e:
             logger.exception(f"Row {row_id}: Email sending raised an exception.")
-            st.error(f"Email sending raised exception: {e}")
-            return
+            print(f"Email sending raised exception: {e}")
+            return True
 
         if success:
             logger.info(f"Row {row_id}: Email sent, marking as Contacted.")
+            print(f"Row {row_id}: Email sent, marking as Contacted.")
             try:
-                db.update_cell(st.session_state.websites_table, row_id, "STATUS", "Contacted")
+                db.update_cell(websites_table, row_id, "STATUS", "Contacted")
+                json_string = json.dumps(gpt_json, ensure_ascii=False)
+                db.update_cell(websites_table, row_id, "Note3", json_string)
+
+                # Re-fetch the full row after update
+                row = db.get_row(websites_table, row_id)
+
+                if selected_mode == "Ventures":
+                    target_table = MAIN_VENTURES_TABLE_ID
+                else:  # Investors mode
+                    target_table = MAIN_INVESTORS_TABLE_ID
+                
+                try:
+                    # Get the complete row data first
+                    keys = ['Name', 'Note3', 'Description', 'Website', 'Email', 'Location', 'Total Funding Amount', 'LinkedIn', 'Phone', 'CB Rank', 'STATUS']
+                    complete_row = {key: row.get(key) for key in keys}
+
+                    if selected_mode == "Investors":
+                        # Remove 'Total Funding Amount' if present
+                        complete_row.pop("Total Funding Amount", None)
+                    
+                    # Normalize STATUS into a list if it is a string
+                    status_value = complete_row.get("STATUS")
+                    if status_value:
+                        if isinstance(status_value, str):
+                            complete_row["STATUS"] = [status_value]
+                        elif isinstance(status_value, list):
+                            # Already a list, keep as is
+                            pass
+                        else:
+                            # If None or other types, set empty list or handle as needed
+                            complete_row["STATUS"] = []
+
+                    else:
+                        complete_row["STATUS"] = []
+                    
+                    if complete_row:
+                        # Create the new row in the main table
+                        new_row = db.create_main_table_row(
+                            table_id=target_table,
+                            row_data=complete_row
+                        )
+                        logger.info(f"Row {row_id}: Successfully created in main {selected_mode} table with ID {new_row.get('id')}")
+                        print(f"Row {row_id}: Successfully created in main {selected_mode} table with ID {new_row.get('id')}")
+                    else:
+                        logger.error(f"Row {row_id}: Could not retrieve complete row data for creating in main table")
+                        print("Could not retrieve complete row data for creating in main table")
+                except Exception as create_error:
+                    logger.error(f"Row {row_id}: Failed to create in main table: {create_error}")
+                    print(f"Failed to create in main table: {create_error}")
+
             except Exception as e:
-                logger.exception(f"Row {row_id}: Failed to update status to Contacted.")
-                st.error(f"Failed to update row status: {e}")
+                logger.exception(f"Row {row_id}: Failed to update status to Contacted or Note3.")
+                print(f"Failed to update row status or Note3: {e}")
         else:
             logger.error(f"Row {row_id}: Email failed to send: {msg}")
-            st.error(f"Email sending failed: {msg}")
+            print(f"Email sending failed: {msg}")
 
     else:
         logger.info(f"Row {row_id}: Score below 7 or missing email fields, not sending email.")
+        print(f"Row {row_id}: Score below 7 or missing email fields, not sending email.")
+        try:
+            db.update_cell(websites_table, row_id, "STATUS", "not contacted yet")
+            db.update_cell(websites_table, row_id, "Note3", json.dumps(gpt_json))
+        except Exception as e:
+            logger.exception(f"Row {row_id}: Failed to update STATUS or Note3 for low score.")
+            print(f"Failed to update STATUS or Note3: {e}")
 
     # Mark row as processed regardless
     try:
-        db.update_cell(st.session_state.websites_table, row_id, "PROCESSED", True)
-        st.success(f"Row {row_id} processed successfully.")
+        db.update_cell(websites_table, row_id, "x", True)
+        print(f"Row {row_id} processed successfully.")
     except Exception as e:
         logger.error(f"Row {row_id}: Failed to mark row as processed: {e}")
-        st.error(f"Failed to mark row as processed: {e}")
+        print(f"Failed to mark row as processed: {e}")
 
-# --- Autorun Loop ---
-if st.session_state.autorun:
+    return True
+
+
+def main():
+    if not OUTREACH_DATABASE_ID:
+        logger.critical("Environment variable OUTREACH_DATABASE_ID is not set.")
+        print("Missing Outreach DB ID in environment.")
+        exit(1)
+
+    print("=== Autonomous Web Analyzer ===")
+
+    # Load tables
     try:
-        if is_within_active_hours(st.session_state.work_start_hour, st.session_state.work_end_hour, st.session_state.work_days):
-            process_next_row()
-            st.write(f"Waiting {st.session_state.delay_minutes} minutes until next run...")
-            time.sleep(st.session_state.delay_minutes * 60)
-        else:
-            st.info(f"Outside active hours or working days, sleeping for 5 minutes.")
-            time.sleep(300)
-        st.experimental_rerun()
+        tables = db.get_tables_in_outreach_database()
     except Exception as e:
-        logger.exception("Unexpected error during autorun loop")
-        st.error(f"Unexpected error: {e}")
+        logger.exception("Failed to load tables from Outreach DB")
+        print(f"Failed to load tables: {e}")
+        exit(1)
 
+    if not tables:
+        logger.warning("No tables found in Outreach DB.")
+        print("No tables found in Outreach DB.")
+        exit(1)
+
+    table_options = {f"{t['name']} (ID: {t['id']})": t['id'] for t in tables}
+
+    # Select sender account at the beginning
+    sender_account = choose_sender_account()
+    
+    mode = prompt_select("Select mode:", ["Ventures", "Investors"])
+    websites_table_key = prompt_select("Select Websites table:", list(table_options.keys()))
+    info_table_key = prompt_select("Select Info table:", list(table_options.keys()))
+
+    delay_minutes = prompt_int("Delay between runs (minutes)", 1, 1440, 10)
+    work_start_hour = prompt_int("Work Start Hour (CET)", 0, 23, 9)
+    work_end_hour = prompt_int("Work End Hour (CET)", 0, 23, 21)
+    work_days = prompt_multiselect("Select Working Days", WEEK_DAYS, ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
+
+    websites_table = table_options[websites_table_key]
+    info_table = table_options[info_table_key]
+
+    if TEST_MODE:
+        print("⚠️ TEST MODE IS ENABLED ⚠️")
+
+    print(f"Configuration:")
+    print(f"Mode: {mode}")
+    print(f"Websites Table: {websites_table_key}")
+    print(f"Info Table: {info_table_key}")
+    print(f"Sender Account: {sender_account['name']} <{sender_account['email']}>")
+    print(f"Delay between runs: {delay_minutes} minutes")
+    print(f"Working hours: {work_start_hour}:00 to {work_end_hour}:00 CET")
+    print(f"Working days: {', '.join(work_days)}")
+    print("Starting processing loop...")
+
+    try:
+        while True:
+            if is_within_active_hours(work_start_hour, work_end_hour, work_days):
+                has_more = process_next_row(mode, websites_table, info_table, sender_account)
+                if not has_more:
+                    print(f"No more rows to process. Sleeping for {delay_minutes} minutes...")
+                    time.sleep(delay_minutes * 60)
+                else:
+                    print(f"Waiting {delay_minutes} minutes until next processing cycle...")
+                    time.sleep(delay_minutes * 60)
+            else:
+                print("Outside working hours. Sleeping for 5 minutes...")
+                time.sleep(5 * 60)
+    except KeyboardInterrupt:
+        print("\nProcess interrupted by user. Exiting...")
+    except Exception as e:
+        logger.exception("Fatal error in main loop")
+        print(f"Fatal error: {e}")
+
+
+if __name__ == "__main__":
+    main()

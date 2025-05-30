@@ -1,23 +1,22 @@
+import json
 import os
-from dotenv import load_dotenv
-load_dotenv()
 
-# Authentication
-APP_PASSWORD = os.getenv("APP_PASSWORD", "letmein")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config.json')
 
-# Database ID
-OUTREACH_DATABASE_ID = os.getenv("OUTREACH_DATABASE_ID")
+with open(CONFIG_PATH, "r") as f:
+    config = json.load(f)
 
-# Baserow config
-BASEROW_API_URL = os.getenv("BASEROW_API_URL", "http://localhost:3000")
-BASEROW_API_TOKEN = os.getenv("BASEROW_API_TOKEN", "")
+APP_PASSWORD = config.get("APP_PASSWORD", "letmein")
+OPENAI_API_KEY = config.get("OPENAI_API_KEY")
+OUTREACH_DATABASE_ID = config.get("OUTREACH_DATABASE_ID")
+MAIN_VENTURES_TABLE_ID = config.get("MAIN_VENTURES_TABLE_ID")
+MAIN_INVESTORS_TABLE_ID = config.get("MAIN_INVESTORS_TABLE_ID")
 
-# Email
-SENDER_NAME = os.getenv("SENDER_NAME", "Atlantis Team")
-SMTP_SERVER = os.getenv("SMTP_SERVER")
-SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
-SMTP_USERNAME = os.getenv("SMTP_USERNAME")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
-TEST_EMAIL_ADDRESS = os.getenv("TEST_EMAIL_ADDRESS")
-TEST_MODE = os.getenv("TEST_MODE", "true").lower() == "true"
+BASEROW_API_URL = config.get("BASEROW_API_URL", "http://localhost:3000")
+BASEROW_API_TOKEN = config.get("BASEROW_API_TOKEN", "")
+
+# Load sender accounts list
+SENDER_ACCOUNTS = config.get("SENDER_ACCOUNTS", [])
+
+TEST_EMAIL_ADDRESS = config.get("TEST_EMAIL_ADDRESS")
+TEST_MODE = bool(config.get("TEST_MODE", True))

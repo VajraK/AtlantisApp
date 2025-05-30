@@ -1,5 +1,5 @@
 venv/
 docker-compose.yml
-.env
+config.json
 app/__pycache__
 app.log

@@ -1,0 +1,29 @@
+{
+  "APP_PASSWORD": "letmein",
+  "OPENAI_API_KEY": "your_openai_api_key_here",
+  "OUTREACH_DATABASE_ID": "your_outreach_database_id_here",
+  "MAIN_VENTURES_TABLE_ID": "",
+  "MAIN_INVESTORS_TABLE_ID": "",
+  "BASEROW_API_URL": "http://localhost:3000",
+  "BASEROW_API_TOKEN": "",
+  "SENDER_ACCOUNTS": [
+    {
+      "name": "Atlantis Team 1",
+      "email": "user1@example.com",
+      "smtp_server": "smtp.example.com",
+      "smtp_port": 465,
+      "smtp_username": "user1@example.com",
+      "smtp_password": "password1"
+    },
+    {
+      "name": "Atlantis Team 2",
+      "email": "user2@example.com",
+      "smtp_server": "smtp.example.com",
+      "smtp_port": 465,
+      "smtp_username": "user2@example.com",
+      "smtp_password": "password2"
+    }
+  ],
+  "TEST_EMAIL_ADDRESS": "test@example.com",
+  "TEST_MODE": true
+}
