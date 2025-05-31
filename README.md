@@ -76,11 +76,11 @@ pip install -r requirements.txt
    ```bash
    docker-compose up -d
    ```
-2. Create Baserow database with:
+2. Create two Baserow database with:
    - Websites table (columns: Name, Website, Email, etc.)
-   - Ventures/Investors info tables
-   - STATUS field (text)
-   - x field (checkbox for processed status)
+   - Ventures/Mandates info tables
+   - Main Databses
+     (for details, ask Vajra Kantor — vajra@atlantispathways.com)
 
 ## Usage
 
@@ -141,40 +141,10 @@ Common issues:
 
 Check `app.log` for detailed error messages.
 
-## License
-
-MIT License - See [LICENSE](LICENSE) file
-
 ---
 
-_Created with ❤️ by Atlantis Pathways - Connecting Ventures & Investors_
+_Created with ❤️ by Atlantis Pathways_
 
 ```
 
-### Key Features:
-1. Clear setup instructions with copy-paste commands
-2. Visual file structure overview
-3. Configuration guidance with examples
-4. Workflow visualization
-5. Troubleshooting common issues
-6. Customization notes
-7. Docker integration details
-
-To use:
-1. Copy this entire markdown block
-2. Paste into a new `README.md` file in your project root
-3. Replace placeholder values with your actual information
-4. Add your logo URL or remove the placeholder
-5. Customize any sections specific to your implementation
-
-The README includes:
-- Prerequisites checklist
-- Step-by-step installation
-- Configuration examples
-- Visual file tree
-- Usage instructions
-- Workflow explanation
-- Customization options
-- Troubleshooting guide
-- License placeholder
 ```
