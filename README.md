@@ -144,7 +144,3 @@ Check `app.log` for detailed error messages.
 ---
 
 _Created with ❤️ by Atlantis Pathways_
-
-```
-
-```
