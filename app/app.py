@@ -6,6 +6,7 @@ import pytz
 from datetime import datetime
 from pydantic import BaseModel, ValidationError, EmailStr
 from typing import List
+import random
 
 from config import OUTREACH_DATABASE_ID, TEST_MODE, SENDER_ACCOUNTS, MAIN_VENTURES_TABLE_ID, MAIN_INVESTORS_TABLE_ID
 import db
@@ -50,6 +51,13 @@ class GPTOutput(BaseModel):
 WEEK_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 # --- Helper functions ---
+
+def get_randomized_delay(base_delay_minutes):
+    """Return a random delay within ±20% of the base delay"""
+    variation = 0.2  # 20%
+    min_delay = base_delay_minutes * (1 - variation)
+    max_delay = base_delay_minutes * (1 + variation)
+    return random.uniform(min_delay, max_delay)
 
 def prompt_select(prompt, options):
     print(prompt)
@@ -176,9 +184,9 @@ def process_next_row(selected_mode, websites_table, info_table, sender_account):
             logger.error(f"Row {row_id}: Description also too short ({word_count} words).")
             print("ERROR: No sufficient text available for analysis.")
             return True
-    elif word_count > 1000:
-        logger.info(f"Row {row_id}: Trimming scraped content from {word_count} to 1000 words.")
-        scraped_text = " ".join(scraped_text.split()[:1000])
+    elif word_count > 3000:
+        logger.info(f"Row {row_id}: Trimming scraped content from {word_count} to 3000 words.")
+        scraped_text = " ".join(scraped_text.split()[:3000])
 
     try:
         relevant_data = db._get_table_data(info_table)
@@ -365,6 +373,8 @@ def main():
     work_end_hour = prompt_int("Work End Hour (CET)", 0, 23, 21)
     work_days = prompt_multiselect("Select Working Days", WEEK_DAYS, ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
 
+    randomized_delay = get_randomized_delay(delay_minutes)
+
     websites_table = table_options[websites_table_key]
     info_table = table_options[info_table_key]
 
@@ -386,11 +396,11 @@ def main():
             if is_within_active_hours(work_start_hour, work_end_hour, work_days):
                 has_more = process_next_row(mode, websites_table, info_table, sender_account)
                 if not has_more:
-                    print(f"No more rows to process. Sleeping for {delay_minutes} minutes...")
-                    time.sleep(delay_minutes * 60)
+                    print(f"No more rows to process. Sleeping for {randomized_delay:.1f} minutes...")
+                    time.sleep(randomized_delay * 60)
                 else:
-                    print(f"Waiting {delay_minutes} minutes until next processing cycle...")
-                    time.sleep(delay_minutes * 60)
+                    print(f"Waiting {randomized_delay:.1f} minutes until next processing cycle...")
+                    time.sleep(randomized_delay * 60)
             else:
                 print("Outside working hours. Sleeping for 5 minutes...")
                 time.sleep(5 * 60)

@@ -6,7 +6,7 @@ Here is the data about a company:
 Location: {location or 'Unknown'}
 Total Funding Amount: {funding or 'Unknown'}
 
-Scraped Text:
+Scraped Text (may be truncated):
 \"\"\"{scraped_text[:3000]}\"\"\"
 
 Found emails: {', '.join(emails) if emails else 'None'}
@@ -15,6 +15,8 @@ Database email: {row_email if row_email else 'None'}
 
 def ventures_prompt(mandates: str) -> str:
     return f"""
+You are a professional investment analyst assistant helping match ventures to investor mandates.
+
 Your task has three parts:
 
 1. For each of the following mandates, score how well it matches the company on a scale of 1–10, where:
@@ -24,20 +26,31 @@ Your task has three parts:
 
 Only consider those with a score **7 or higher** as a "fit".
 
+When scoring, consider factors such as:
+- Industry alignment
+- Stage of company
+- Fundraising amount
+- Geography (if relevant)
+- Any specific mandate notes
+
 Mandates to evaluate (format: [Acronym - Notes]):
 {mandates}
 
 2. From the list of found and database emails, choose the one most appropriate for contacting this company about **Fund Raising**.
 
-3. Write a short professional email proposing a connection, **only if there are strong matches (score ≥ 7)**.
-- Start with: "Dear [Venture-name] Team,"
-- Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm connecting ventures with investors, and that we would be interested to potentially connecting them with investors in our network.
-- Reference relevant matched mandates (score ≥ 7) ((do not mention acronyms)).
-- Say that they can find out more about our current investor mandates on our website (atlantispathways.com).
-- Keep under 300 words.
-- Professional and enthusiastic.
+- If the selected email is a **generic address** (e.g. info@, contact@), write the email greeting as: **"Dear [Company Name] Team,"**
+- If the email is **clearly personal** (e.g. john.smith@company.com) **and** the associated full name is confidently known, you may use: **"Dear [Full Name],"**
+- **If uncertain, default to**: **"Dear [Company Name] Team,"**
 
-Finally, output the entire result as a valid JSON object with the following structure:
+3. Write a short professional email proposing a connection, **only if there are strong matches (score ≥ 7)**.
+- Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm connecting ventures with investors.
+- Mention that you are reaching out to potentially connect them with investors in your network.
+- Reference the **relevant matched mandates** (score ≥ 7) — do **not** mention acronyms.
+- Mention they can find out more about your investor mandates at **atlantispathways.com**.
+- Use a tone that is professional, succinct, and positively assertive (no exclamation marks).
+- Keep the email ideally under **200 words**, and **never more than 300 words**.
+
+Output the result as a valid JSON object with the following structure:
 
 {{
   "matches": [
@@ -65,27 +78,42 @@ If there are no fits with score ≥ 7, output the same JSON structure, but with:
 
 def investors_prompt(ventures: str) -> str:
     return f"""
+You are a professional investment analyst assistant helping match investors to appropriate venture opportunities.
+
 Your task has three parts:
 
-1. For each of the following ventures, score how well it matches this investor’s focus on a scale of 1–10, where:
+1. For each of the following ventures, score how well it matches the investor’s focus on a scale of 1–10, where:
    - 10 = Perfect match
    - 7-9 = Strong match
    - 1-6 = Weak or no match
 
 Only consider those with a score **7 or higher** as a "fit".
 
+When scoring, consider:
+- Industry alignment
+- Company stage
+- Fundraising size
+- Geographic focus
+- Specific investor notes
+
 Ventures to evaluate (format: [Acronym - Industry - Notes - Raising]):
 {ventures}
 
 2. From the list of found and database emails, choose the one most appropriate for contacting this investor about **Investment Opportunities**.
 
+- If the selected email is a **generic address** (e.g. info@, contact@), write the email greeting as: **"Dear [Investor Firm Name] Team,"**
+- If the email is **clearly personal** (e.g. john.smith@...) **and** the contact name is confidently known, use: **"Dear [Full Name],"**
+- **If uncertain, default to**: **"Dear [Investor Firm Name] Team,"**
+
 3. Write a short professional email proposing a connection, **only if there are strong matches (score ≥ 7)**.
-- Start with: "Dear [CONTACT NAME],"
-- Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm connecting ventures with investors, and that we would be interested in exploring potential partnership between us and them.
-- Reference relevant matched ventures (score ≥ 7) ((do not mention acronyms)).
-- Say that they can find out more about our current partnered ventures on our website (atlantispathways.com).
-- Keep under 300 words.
-- Professional and enthusiastic.
+- Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm connecting ventures with investors.
+- Mention you're exploring a potential partnership between your network and theirs.
+- Reference the relevant matched ventures (score ≥ 7) — **do not** mention acronyms.
+- Mention they can find out more about your current partnered ventures at **atlantispathways.com**.
+- Use a tone that is professional, succinct, and positively assertive.
+- Keep the email ideally under **200 words**, and **never more than 300 words**.
+
+Output the result as a valid JSON object in this format:
 
 {{
   "matches": [
@@ -104,8 +132,6 @@ Ventures to evaluate (format: [Acronym - Industry - Notes - Raising]):
   "subject": "Your email subject here",
   "email_body": "Your full email message here"
 }}
-
-If there are no fits with score ≥ 7, the "matches" list should still include all ventures with their scores, but the email fields must be:
 
 If there are no fits with score ≥ 7, output the same JSON structure, but with:
 "selected_email": "",

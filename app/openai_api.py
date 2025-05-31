@@ -44,7 +44,7 @@ def ask_gpt_about_company(scraped_text: str, emails: list, row_email: str,
                 {"role": "system", "content": prompt_intro},
                 {"role": "user", "content": task}
             ],
-            max_tokens=1000,
+            max_tokens=1500,
             temperature=0.7,
         )
 
