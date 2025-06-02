@@ -7,6 +7,8 @@ from datetime import datetime
 from pydantic import BaseModel, ValidationError, EmailStr
 from typing import List
 import random
+import importlib.util
+import sys
 
 from config import OUTREACH_DATABASE_ID, TEST_MODE, SENDER_ACCOUNTS, MAIN_VENTURES_TABLE_ID, MAIN_INVESTORS_TABLE_ID
 import db
@@ -51,6 +53,33 @@ class GPTOutput(BaseModel):
 WEEK_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 # --- Helper functions ---
+
+def load_prompts_from_file(file_path):
+    """Dynamically import prompt variables from a given Python file."""
+    module_name = os.path.splitext(os.path.basename(file_path))[0]
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    if spec is None:
+        raise ImportError(f"Could not load module spec from {file_path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    
+    required_attrs = ['base_prompt', 'ventures_prompt', 'investors_prompt']
+    for attr in required_attrs:
+        if not hasattr(module, attr):
+            raise AttributeError(f"{file_path} is missing required attribute: {attr}")
+    
+    return module.base_prompt, module.ventures_prompt, module.investors_prompt
+
+def select_prompt_file():
+    prompt_dir = os.path.join(os.path.dirname(__file__), "..", "prompts")
+    available_files = [f for f in os.listdir(prompt_dir) if f.endswith(".py")]
+    if not available_files:
+        raise FileNotFoundError("No prompt files found in 'prompts' directory.")
+
+    selected_file = prompt_select("Choose a prompt file to use:", available_files)
+    full_path = os.path.join(prompt_dir, selected_file)
+    return full_path
 
 def get_randomized_delay(base_delay_minutes):
     """Return a random delay within ±20% of the base delay"""
@@ -140,7 +169,7 @@ def is_within_active_hours(start_hour, end_hour, working_days):
         # Overnight span (e.g. start=22, end=6)
         return current_hour >= start_hour or current_hour < end_hour
 
-def process_next_row(selected_mode, websites_table, info_table, sender_account):
+def process_next_row(selected_mode, websites_table, info_table, sender_account, base_prompt, ventures_prompt, investors_prompt):
     try:
         row = db.get_next_row(websites_table)
     except Exception as e:
@@ -205,7 +234,10 @@ def process_next_row(selected_mode, websites_table, info_table, sender_account):
             selected_mode,
             relevant_data,
             row.get("Location", ""),
-            row.get("Total Funding Amount", "")
+            row.get("Total Funding Amount", ""),
+            base_prompt,
+            ventures_prompt,
+            investors_prompt
         )
     except Exception as e:
         logger.exception(f"Row {row_id}: GPT analysis failed.")
@@ -364,6 +396,8 @@ def main():
     # Select sender account at the beginning
     sender_account = choose_sender_account()
     
+    prompt_file_path = select_prompt_file()
+    base_prompt, ventures_prompt, investors_prompt = load_prompts_from_file(prompt_file_path)
     mode = prompt_select("Select mode:", ["Ventures", "Investors"])
     websites_table_key = prompt_select("Select Websites table:", list(table_options.keys()))
     info_table_key = prompt_select("Select Info table:", list(table_options.keys()))
@@ -394,7 +428,7 @@ def main():
     try:
         while True:
             if is_within_active_hours(work_start_hour, work_end_hour, work_days):
-                has_more = process_next_row(mode, websites_table, info_table, sender_account)
+                has_more = process_next_row(mode, websites_table, info_table, sender_account, base_prompt, ventures_prompt, investors_prompt)
                 if not has_more:
                     print(f"No more rows to process. Sleeping for {randomized_delay:.1f} minutes...")
                     time.sleep(randomized_delay * 60)

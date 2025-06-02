@@ -3,7 +3,6 @@ import logging
 import re
 
 from config import OPENAI_API_KEY
-from prompts import base_prompt, ventures_prompt, investors_prompt
 
 # Set up logging
 logging.basicConfig(
@@ -22,7 +21,8 @@ def clean_json_output(json_str: str) -> str:
     return json_str.strip()
 
 def ask_gpt_about_company(scraped_text: str, emails: list, row_email: str,
-                          mode: str, relevant_data: list, location: str, funding: str) -> str:
+                          mode: str, relevant_data: list, location: str, funding: str,
+                          base_prompt, ventures_prompt, investors_prompt) -> str:
     try:
         if not scraped_text:
             return "ERROR: No scraped text available for analysis"

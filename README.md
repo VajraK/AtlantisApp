@@ -1,6 +1,6 @@
 # AtlantisApp - Autonomous Outreach Platform
 
-![Atlantis Logo](https://atlantispathways.com/wp-content/uploads/2025/01/LOGO.png)
+![Atlantis Logo](https://atlantispathways.com/wp-content/uploads/2025/06/AtlantisApp.png)
 
 An AI-powered platform that analyzes companies/investors, matches them to relevant opportunities, and automates outreach emails using GPT-4.
 
