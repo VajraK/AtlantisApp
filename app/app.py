@@ -210,8 +210,13 @@ def process_next_row(selected_mode, websites_table, info_table, sender_account, 
         scraped_text = row.get("Description", "")
         word_count = len(scraped_text.split())
         if word_count < 10:
-            logger.error(f"Row {row_id}: Description also too short ({word_count} words).")
+            logger.warning(f"Row {row_id}: Description also too short ({word_count} words).")
             print("ERROR: No sufficient text available for analysis.")
+            try:
+                db.update_cell(websites_table, row_id, "STATUS", "Skipped")
+                db.update_cell(websites_table, row_id, "x", True)  # Mark as processed
+            except Exception as e:
+                logger.error(f"Row {row_id}: Failed to mark row as Skipped: {e}")
             return True
     elif word_count > 3000:
         logger.info(f"Row {row_id}: Trimming scraped content from {word_count} to 3000 words.")
