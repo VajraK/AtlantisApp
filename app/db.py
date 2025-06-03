@@ -44,31 +44,12 @@ def get_next_row(table_id):
     url = f"{BASEROW_API_URL}/api/database/rows/table/{table_id}/?user_field_names=true"
     response = requests.get(url, headers=HEADERS)
     response.raise_for_status()
-    
-    data = response.json()
-    rows = data.get("results", [])
-
-    if not rows:
-        print("No rows returned!")
-        return None
-
-    # Print all fields in the first row to debug field names
-    print("Field names in first row:", list(rows[0].keys()))
-
+    rows = response.json().get("results", [])
     for row in rows:
-        print("Row ID:", row.get("id"))
-        print("Full row content:", row)
-        
-        # Adjust the field name here if needed
         status = row.get("STATUS")
-
-        if status is None or (isinstance(status, str) and status.strip() == ""):
-            print("Returning this row (STATUS empty):", row)
+        if not status or str(status).strip() in {"", "—"}:
             return row
-
-    print("All rows had STATUS filled.")
     return None
-
 
 
 def update_cell(table_id, row_id, field_name, value):
