@@ -47,10 +47,10 @@ def get_next_row(table_id):
     rows = response.json().get("results", [])
     for row in rows:
         status = row.get("STATUS")
-        # Check if status is None, empty string, or "not contacted yet"
-        if status is None or str(status).strip() in ["", "not contacted yet"]:
+        if not status or str(status).strip() in {"", "—"}:
             return row
     return None
+
 
 def update_cell(table_id, row_id, field_name, value):
     data = {field_name: value}
