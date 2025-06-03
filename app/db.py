@@ -41,28 +41,16 @@ def _get_table_data(table_id):
     return response.json().get("results", [])
 
 def get_next_row(table_id):
-    base_url = f"{BASEROW_API_URL}/api/database/rows/table/{table_id}/"
-    offset = 0
-    page_size = 100
+    url = f"{BASEROW_API_URL}/api/database/rows/table/{table_id}/?user_field_names=true"
+    response = requests.get(url, headers=HEADERS)
+    response.raise_for_status()
+    rows = response.json().get("results", [])
+    for row in rows:
+        status = row.get("STATUS")
+        if status is None or status.strip() == "":
+            return row
+    return None
 
-    while True:
-        url = f"{base_url}?user_field_names=true&limit={page_size}&offset={offset}"
-        response = requests.get(url, headers=HEADERS)
-        response.raise_for_status()
-        data = response.json()
-        rows = data.get("results", [])
-
-        if not rows:
-            print("No more rows returned.")
-            return None
-
-        for row in rows:
-            status = row.get("STATUS")
-            if status is None or (isinstance(status, str) and status.strip() == ""):
-                print("Returning this row (STATUS empty):", row)
-                return row
-
-        offset += page_size  # Go to the next page
 
 def update_cell(table_id, row_id, field_name, value):
     data = {field_name: value}
