@@ -47,7 +47,8 @@ def get_next_row(table_id):
     rows = response.json().get("results", [])
     for row in rows:
         status = row.get("STATUS")
-        if status is None or status.strip() == "":
+        # Check if status is None, empty string, or "not contacted yet"
+        if status is None or str(status).strip() in ["", "not contacted yet"]:
             return row
     return None
 

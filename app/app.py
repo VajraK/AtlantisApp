@@ -211,7 +211,7 @@ def process_next_row(selected_mode, websites_table, info_table, sender_account, 
         word_count = len(scraped_text.split())
         if word_count < 10:
             logger.warning(f"Row {row_id}: Description also too short ({word_count} words).")
-            print("ERROR: No sufficient text available for analysis.")
+            print("No sufficient text available for analysis.")
             try:
                 db.update_cell(websites_table, row_id, "STATUS", "Skipped")
                 db.update_cell(websites_table, row_id, "x", True)  # Mark as processed
