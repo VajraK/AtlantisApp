@@ -51,6 +51,13 @@ def get_next_row(table_id):
             return row
     return None
 
+def delete_row(table_id, row_id):
+    url = f"{BASEROW_API_URL}/api/database/rows/table/{table_id}/{row_id}/"
+    response = requests.delete(url, headers=HEADERS)
+    if response.status_code == 204:
+        return True
+    else:
+        raise Exception(f"Delete failed: {response.status_code} - {response.text}")
 
 def update_cell(table_id, row_id, field_name, value):
     data = {field_name: value}

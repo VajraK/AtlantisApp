@@ -213,8 +213,32 @@ def process_next_row(selected_mode, websites_table, info_table, sender_account, 
             logger.warning(f"Row {row_id}: Description also too short ({word_count} words).")
             print("No sufficient text available for analysis.")
             try:
-                db.update_cell(websites_table, row_id, "STATUS", "Skipped")
-                db.update_cell(websites_table, row_id, "x", True)  # Mark as processed
+                status = "Skipped"
+                db.update_cell(websites_table, row_id, "STATUS", status)
+                db.update_cell(websites_table, row_id, "Skipped", True)
+                
+                # Create in main table
+                target_table = MAIN_VENTURES_TABLE_ID if selected_mode == "Ventures" else MAIN_INVESTORS_TABLE_ID
+                keys = ['Name', 'Note3', 'Description', 'Website', 'Email', 'Location', 
+                        'Total Funding Amount', 'LinkedIn', 'Phone', 'CB Rank', 'STATUS']
+                complete_row = {key: row.get(key) for key in keys}
+                
+                if selected_mode == "Investors":
+                    complete_row.pop("Total Funding Amount", None)
+                
+                if isinstance(status, str):
+                    complete_row["STATUS"] = [status]
+                
+                if complete_row:
+                    new_row = db.create_main_table_row(
+                        table_id=target_table,
+                        row_data=complete_row
+                    )
+                    logger.info(f"Row {row_id}: Successfully created in main {selected_mode} table with ID {new_row.get('id')}")
+                
+                # Delete from original table
+                db.delete_row(websites_table, row_id)
+                logger.info(f"Row {row_id}: Deleted from outreach table")
             except Exception as e:
                 logger.error(f"Row {row_id}: Failed to mark row as Skipped: {e}")
             return True
@@ -257,9 +281,33 @@ def process_next_row(selected_mode, websites_table, info_table, sender_account, 
     except (ValidationError, json.JSONDecodeError) as e:
         logger.error(f"Row {row_id}: GPT output validation failed: {e}")
         try:
-            db.update_cell(websites_table, row_id, "STATUS", "Skipped")
+            status = "Skipped"
+            db.update_cell(websites_table, row_id, "STATUS", status)
             json_string = json.dumps(gpt_json, ensure_ascii=False)
             db.update_cell(websites_table, row_id, "Note3", json_string)
+            
+            # Create in main table
+            target_table = MAIN_VENTURES_TABLE_ID if selected_mode == "Ventures" else MAIN_INVESTORS_TABLE_ID
+            keys = ['Name', 'Note3', 'Description', 'Website', 'Email', 'Location', 
+                    'Total Funding Amount', 'LinkedIn', 'Phone', 'CB Rank', 'STATUS']
+            complete_row = {key: row.get(key) for key in keys}
+            
+            if selected_mode == "Investors":
+                complete_row.pop("Total Funding Amount", None)
+            
+            if isinstance(status, str):
+                complete_row["STATUS"] = [status]
+            
+            if complete_row:
+                new_row = db.create_main_table_row(
+                    table_id=target_table,
+                    row_data=complete_row
+                )
+                logger.info(f"Row {row_id}: Successfully created in main {selected_mode} table with ID {new_row.get('id')}")
+            
+            # Delete from original table
+            db.delete_row(websites_table, row_id)
+            logger.info(f"Row {row_id}: Deleted from outreach table")
         except Exception as ex:
             logger.error(f"Row {row_id}: Failed to mark row as Skipped after validation error or Note3: {ex}")
         print(f"GPT output validation failed: {e}")
@@ -293,84 +341,60 @@ def process_next_row(selected_mode, websites_table, info_table, sender_account, 
             return True
 
         if success:
-            logger.info(f"Row {row_id}: Email sent, marking as Contacted.")
-            print(f"Row {row_id}: Email sent, marking as Contacted.")
-            try:
-                db.update_cell(websites_table, row_id, "STATUS", "Contacted")
-                json_string = json.dumps(gpt_json, ensure_ascii=False)
-                db.update_cell(websites_table, row_id, "Note3", json_string)
-
-                # Re-fetch the full row after update
-                row = db.get_row(websites_table, row_id)
-
-                if selected_mode == "Ventures":
-                    target_table = MAIN_VENTURES_TABLE_ID
-                else:  # Investors mode
-                    target_table = MAIN_INVESTORS_TABLE_ID
-                
-                try:
-                    # Get the complete row data first
-                    keys = ['Name', 'Note3', 'Description', 'Website', 'Email', 'Location', 'Total Funding Amount', 'LinkedIn', 'Phone', 'CB Rank', 'STATUS']
-                    complete_row = {key: row.get(key) for key in keys}
-
-                    if selected_mode == "Investors":
-                        # Remove 'Total Funding Amount' if present
-                        complete_row.pop("Total Funding Amount", None)
-                    
-                    # Normalize STATUS into a list if it is a string
-                    status_value = complete_row.get("STATUS")
-                    if status_value:
-                        if isinstance(status_value, str):
-                            complete_row["STATUS"] = [status_value]
-                        elif isinstance(status_value, list):
-                            # Already a list, keep as is
-                            pass
-                        else:
-                            # If None or other types, set empty list or handle as needed
-                            complete_row["STATUS"] = []
-
-                    else:
-                        complete_row["STATUS"] = []
-                    
-                    if complete_row:
-                        # Create the new row in the main table
-                        new_row = db.create_main_table_row(
-                            table_id=target_table,
-                            row_data=complete_row
-                        )
-                        logger.info(f"Row {row_id}: Successfully created in main {selected_mode} table with ID {new_row.get('id')}")
-                        print(f"Row {row_id}: Successfully created in main {selected_mode} table with ID {new_row.get('id')}")
-                    else:
-                        logger.error(f"Row {row_id}: Could not retrieve complete row data for creating in main table")
-                        print("Could not retrieve complete row data for creating in main table")
-                except Exception as create_error:
-                    logger.error(f"Row {row_id}: Failed to create in main table: {create_error}")
-                    print(f"Failed to create in main table: {create_error}")
-
-            except Exception as e:
-                logger.exception(f"Row {row_id}: Failed to update status to Contacted or Note3.")
-                print(f"Failed to update row status or Note3: {e}")
+            status = "Contacted"
+            logger.info(f"Row {row_id}: Email sent, marking as {status}.")
+            print(f"Row {row_id}: Email sent, marking as {status}.")
         else:
+            status = "not contacted yet"
             logger.error(f"Row {row_id}: Email failed to send: {msg}")
             print(f"Email sending failed: {msg}")
-
     else:
-        logger.info(f"Row {row_id}: Score below 7 or missing email fields, not sending email.")
-        print(f"Row {row_id}: Score below 7 or missing email fields, not sending email.")
-        try:
-            db.update_cell(websites_table, row_id, "STATUS", "not contacted yet")
-            db.update_cell(websites_table, row_id, "Note3", json.dumps(gpt_json))
-        except Exception as e:
-            logger.exception(f"Row {row_id}: Failed to update STATUS or Note3 for low score.")
-            print(f"Failed to update STATUS or Note3: {e}")
+        status = "not contacted yet"
+        logger.info(f"Row {row_id}: Score below 7 or missing email fields, marking as {status}.")
+        print(f"Row {row_id}: Score below 7 or missing email fields, marking as {status}.")
 
-    # Mark row as processed regardless
     try:
-        db.update_cell(websites_table, row_id, "x", True)
+        # Update status and Note3 in original table
+        db.update_cell(websites_table, row_id, "STATUS", status)
+        if gpt_json:
+            json_string = json.dumps(gpt_json, ensure_ascii=False)
+            db.update_cell(websites_table, row_id, "Note3", json_string)
+        
+        # Create in main table regardless of status
+        target_table = MAIN_VENTURES_TABLE_ID if selected_mode == "Ventures" else MAIN_INVESTORS_TABLE_ID
+        keys = ['Name', 'Note3', 'Description', 'Website', 'Email', 'Location', 
+                'Total Funding Amount', 'LinkedIn', 'Phone', 'CB Rank', 'STATUS']
+        complete_row = {key: row.get(key) for key in keys}
+        
+        if selected_mode == "Investors":
+            complete_row.pop("Total Funding Amount", None)
+        
+        if isinstance(status, str):
+            complete_row["STATUS"] = [status]
+        
+        if complete_row:
+            new_row = db.create_main_table_row(
+                table_id=target_table,
+                row_data=complete_row
+            )
+            logger.info(f"Row {row_id}: Successfully created in main {selected_mode} table with ID {new_row.get('id')}")
+        
+        # Delete from original table after successful creation
+        db.delete_row(websites_table, row_id)
+        logger.info(f"Row {row_id}: Deleted from outreach table")
+        
+        # Mark as processed
+        try:
+            db.get_row(websites_table, row_id)  # Just to check if it exists
+            db.update_cell(websites_table, row_id, "x", True)
+        except Exception as e:
+            print(f"Row {row_id} not found or another error occurred: {e}")
+
         print(f"Row {row_id} processed successfully.")
     except Exception as e:
-        logger.error(f"Row {row_id}: Failed to mark row as processed: {e}")
-        print(f"Failed to mark row as processed: {e}")
+        logger.exception(f"Row {row_id}: Failed during final processing steps")
+        print(f"Failed during final processing: {e}")
+        return True
 
     return True
 
