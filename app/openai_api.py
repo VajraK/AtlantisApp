@@ -39,7 +39,7 @@ def ask_gpt_about_company(scraped_text: str, emails: list, row_email: str,
         logger.info("Sending request to OpenAI GPT...")
 
         response = openai.chat.completions.create(
-            model="gpt-4.1",
+            model="gpt-4",
             messages=[
                 {"role": "system", "content": prompt_intro},
                 {"role": "user", "content": task}
