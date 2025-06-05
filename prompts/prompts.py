@@ -69,8 +69,6 @@ Output the result as a valid JSON object with the following structure:
   "email_body": "Your full email message here"
 }}
 
-Make sure the JSON is properly escaped — especially `email_body` — so it can be parsed using `json.loads()`. Escape all newline characters and internal quotes where necessary.
-
 If there are no fits with score ≥ 7, output the same JSON structure, but with:
 "selected_email": "",
 "subject": "",
@@ -133,8 +131,6 @@ Output the result as a valid JSON object in this format:
   "subject": "Your email subject here",
   "email_body": "Your full email message here"
 }}
-
-Make sure the JSON is properly escaped — especially `email_body` — so it can be parsed using `json.loads()`. Escape all newline characters and internal quotes where necessary.
 
 If there are no fits with score ≥ 7, output the same JSON structure, but with:
 "selected_email": "",
