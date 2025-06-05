@@ -284,6 +284,7 @@ def process_next_row(selected_mode, websites_table, info_table, sender_account, 
             status = "Skipped"
             db.update_cell(websites_table, row_id, "STATUS", status)
             json_string = json.dumps(gpt_json, ensure_ascii=False)
+            row['Note3'] = json_string
             db.update_cell(websites_table, row_id, "Note3", json_string)
             
             # Create in main table
@@ -358,6 +359,7 @@ def process_next_row(selected_mode, websites_table, info_table, sender_account, 
         db.update_cell(websites_table, row_id, "STATUS", status)
         if gpt_json:
             json_string = json.dumps(gpt_json, ensure_ascii=False)
+            row['Note3'] = json_string
             db.update_cell(websites_table, row_id, "Note3", json_string)
         
         # Create in main table regardless of status
