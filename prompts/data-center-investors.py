@@ -73,6 +73,11 @@ If there are no fits with score ≥ 7, output the same JSON structure, but with:
 "selected_email": "",
 "subject": "",
 "email_body": ""
+
+Important: Ensure the output is a valid JSON string.
+- Escape all double quotes inside string values as `\"`
+- Escape all newline characters inside string values as `\\n`
+- Do not include unescaped control characters
 """
 
 def investors_prompt(ventures: str) -> str:
@@ -136,4 +141,9 @@ If there are no fits with score ≥ 7, output the same JSON structure, but with:
 "selected_email": "",
 "subject": "",
 "email_body": ""
+
+Important: Ensure the output is a valid JSON string.
+- Escape all double quotes inside string values as `\"`
+- Escape all newline characters inside string values as `\\n`
+- Do not include unescaped control characters
 """
