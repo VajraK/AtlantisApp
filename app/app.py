@@ -72,12 +72,29 @@ def load_prompts_from_file(file_path):
     
     return module.base_prompt, module.ventures_prompt, module.investors_prompt
 
-def clean_json_string(json_str):
-    # Remove control characters except for \t, \n, \r
-    json_str = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]', '', json_str)
-    # Escape newlines
-    json_str = json_str.replace('\n', '\\n').replace('\r', '\\r')
-    return json_str
+def clean_and_parse_gpt_output(gpt_result):
+    # If it's already a dict, return as-is
+    if isinstance(gpt_result, dict):
+        return gpt_result
+    
+    # First cleaning pass - remove control characters
+    cleaned = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', gpt_result.strip())
+    
+    # Second pass - ensure proper JSON formatting
+    try:
+        # Try parsing directly first
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        # If that fails, try fixing common issues
+        try:
+            # Replace single quotes with double quotes
+            cleaned = re.sub(r"(?<!\\)'", '"', cleaned)
+            # Ensure all property names are quoted
+            cleaned = re.sub(r'(\w+)(\s*:\s*)', r'"\1"\2', cleaned)
+            return json.loads(cleaned)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse after cleaning: {e}")
+            raise
 
 def select_prompt_file():
     prompt_dir = os.path.join(os.path.dirname(__file__), "..", "prompts")
@@ -284,8 +301,7 @@ def process_next_row(selected_mode, websites_table, info_table, sender_account, 
     # Validate GPT output with Pydantic
     try:
         # gpt_result expected to be JSON string or dict
-        cleaned_result = clean_json_string(gpt_result) if not isinstance(gpt_result, dict) else gpt_result
-        gpt_json = cleaned_result if isinstance(gpt_result, dict) else json.loads(cleaned_result)
+        gpt_json = clean_and_parse_gpt_output(gpt_result)
         validated_output = GPTOutput(**gpt_json)
     except (ValidationError, json.JSONDecodeError) as e:
         logger.error(f"Row {row_id}: GPT output validation failed: {e}")
