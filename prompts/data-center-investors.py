@@ -113,7 +113,7 @@ Ventures to evaluate (format: [Acronym - Industry - Notes - Raising]):
 - Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm connecting investors with high-potential opportunities.
 - Mention you’re currently identifying investors who are actively looking to acquire or invest in data centers, particularly in Europe, but also globally.
 - Express interest in exploring whether there’s alignment between your network and theirs.
-- Tell a little about the relevant matched ventures (score ≥ 7) — **do not** mention acronyms.
+- Tell a little about the relevant matched ventures (score ≥ 7) — **do not** mention acronyms; and tell that we also have other ones.
 - Use a tone that is professional, concise, and warmly confident.
 - Keep the email ideally under **200 words**, and **never more than 300 words**.
 
