@@ -42,11 +42,11 @@ Mandates to evaluate (format: [Acronym - Notes]):
 - **If uncertain, default to**: **"Dear [Company Name] Team,"**
 
 3. Write a short professional email proposing a connection, **only if there are strong matches (score ≥ 7)**.
-- Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm connecting ventures with investors.
+- Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm helping its partnered investors in finding new ventures to support.
 - Mention that you are reaching out to potentially connect them with investors in your network.
 - Reference the **relevant matched mandates** (score ≥ 7) — do **not** mention acronyms.
-- Mention they can find out more about your investor mandates at **atlantispathways.com**.
-- Use a tone that is professional, succinct, and positively assertive (no exclamation marks).
+- Mention they can find out a bit more about your investor mandates at **atlantispathways.com**.
+- Use a tone that is professional, but kind.
 - Keep the email ideally under **200 words**, and **never more than 300 words**.
 
 Output the result as a valid JSON object with the following structure:
@@ -105,11 +105,11 @@ Ventures to evaluate (format: [Acronym - Industry - Notes - Raising]):
 - **If uncertain, default to**: **"Dear [Investor Firm Name] Team,"**
 
 3. Write a short professional email proposing a connection, **only if there are strong matches (score ≥ 7)**.
-- Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm connecting investors with high-potential opportunities.
-- Mention you’re currently identifying investors who are actively looking to acquire or invest in data centers, particularly in Europe, but also globally.
-- Express interest in exploring whether there’s alignment between your network and theirs.
-- Tell a little about the relevant matched ventures (score ≥ 7) — **do not** mention acronyms; and tell that we also have other ones.
-- Use a tone that is professional, concise, and warmly confident.
+- Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm helping its partnered investors in finding new ventures to support.
+- Mention that you are reaching out to potentially connect them with your client ventures.
+- Reference the **relevant matched mandates** (score ≥ 7) — do **not** mention acronyms.
+- Mention they can find out a bit more about your current ventures at **atlantispathways.com**.
+- Use a tone that is professional, but kind.
 - Keep the email ideally under **200 words**, and **never more than 300 words**.
 
 Output the result as a valid JSON object in this format:
