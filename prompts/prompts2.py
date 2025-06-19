@@ -42,12 +42,12 @@ Mandates to evaluate (format: [Acronym - Notes]):
 - **If uncertain, default to**: **"Dear [Company Name] Team,"**
 
 3. Write a short professional email proposing a connection, **only if there are strong matches (score ≥ 7)**.
-- Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm helping its partnered investors in finding new ventures to support.
+- Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm.
 - Mention that you are reaching out to potentially connect them with investors in your network.
 - Reference the **relevant matched mandates** (score ≥ 7) — do **not** mention acronyms.
 - Mention they can find out a bit more about your investor mandates at **atlantispathways.com**.
-- Use a tone that is professional, but kind.
-- Keep the email ideally under **200 words**, and **never more than 300 words**.
+- Use a tone that is professional, keep it brief and crisp, but kind.
+- Keep the email ideally under **100 words**, and **never more than 200 words**.
 
 Output the result as a valid JSON object with the following structure:
 
