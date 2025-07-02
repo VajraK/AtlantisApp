@@ -11,18 +11,9 @@ Found emails: {', '.join(emails) if emails else 'None'}
 Database email: {row_email if row_email else 'None'}
 """
 
-def ventures_prompt() -> str:
-    # Hardcoded investor mandates
-    mandates = [
-        "Data Center - any capital need",
-        "biotech any stage but pre-seed",
-        "AI - has some significant traction (preferred revenue and profits) (tech enabled services)",
-        "Mining deal (debt)",
-        "Aerospace defense"
-    ]
-
+def ventures_prompt(mandates: str) -> str:
     return f"""
-You are a professional investment analyst assistant helping match a company to the following investment mandates:
+You are a professional investment analyst assistant helping match ventures to investor mandates.
 
 {chr(10).join(f"- {m}" for m in mandates)}
 
@@ -41,6 +32,9 @@ Your task has three parts:
    - Geography (if relevant)
    - Any specific mandate notes
 
+   Mandates to evaluate (format: [Acronym - Notes]):
+   {mandates}
+
 2. From the list of found and database emails, choose the single most appropriate address for contacting this company about **fundraising**.
    - If it is a **generic** address (e.g., info@, contact@), greeting should be: **"Dear [Company Name] Team,"**
    - If it is a **personal** address (e.g., john.smith@company.com) and you know the full name, greeting may be: **"Dear [Full Name],"**
@@ -48,37 +42,38 @@ Your task has three parts:
 
 3. If there is at least one strong fit (score ≥ 7):
    - Select the one category with the **highest** score.
-   - Write a concise, professional email (under 200 words, ideally under 100) from **Vajra Kantor at Hope Capital Advisors**.
+   - Write a concise, professional, kind email (under 300 words, ideally under 200) from **Vajra Kantor at Hope Capital Advisors**.
    - Subject line should read: **"Exploring Funding Opportunities for [Company Name]"**.
    - In the body:
-     - Mention that you recently reviewed their website and were impressed by one or two key aspects of their work (based on the scraped data).
+     - Mention that you recently reviewed their website and were impressed by a key aspect of their work (based on the scraped data).
      - Reference the relevant category (called "mandate") that is the best fit.
      - Note that you have a strong network of capital partners focused on that sector.
      - Invite them to a brief conversation about their growth plans and potential alignment.
 
-If there are **no** strong fits (score < 7 for all), output an empty outreach:
+Output the result as a valid JSON object with the following structure:
 
-```json
-{
-  "matches": [ {"mandate": "<mandate>", "score": <score>, "fit": <true|false>}, ... ],
-  "selected_email": "",
-  "subject": "",
-  "email_body": ""
-}
-```
-
-Otherwise, output:
-```json
-{
+{{
   "matches": [
-    {"mandate": "<mandate>", "score": <score>, "fit": <true|false>},
-    ...
+    {{
+      "acronym": "Mandate1",
+      "score": 9,
+      "fit": true
+    }},
+    {{
+      "acronym": "Mandate2",
+      "score": 6,
+      "fit": false
+    }}
   ],
-  "selected_email": "<chosen email>",
-  "subject": "Exploring Funding Opportunities for <Company Name>",
-  "email_body": "<full email body>"
-}
-```
+  "selected_email": "someone@example.com",
+  "subject": "Your email subject here",
+  "email_body": "Your full email message here"
+}}
+
+If there are no fits with score ≥ 7, output the same JSON structure, but with:
+"selected_email": "",
+"subject": "",
+"email_body": ""
 """
 
 def investors_prompt(ventures: str) -> str:
