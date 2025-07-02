@@ -5,12 +5,11 @@ You are an expert matchmaking assistant for an advisory firm analyzing companies
 Here is the data about a company:
 
 Scraped Text (may be truncated):
-"""{scraped_text[:3000]}"""
+\"\"\"{scraped_text[:3000]}\"\"\"
 
 Found emails: {', '.join(emails) if emails else 'None'}
 Database email: {row_email if row_email else 'None'}
 """
-
 
 def ventures_prompt() -> str:
     # Hardcoded investor mandates
