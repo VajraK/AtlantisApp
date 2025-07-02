@@ -45,7 +45,7 @@ Your task has three parts:
    - Write a concise, professional, kind email (under 300 words, ideally under 200) from **Vajra Kantor at Hope Capital Advisors**.
    - Subject line should read: **"Exploring Funding Opportunities for [Company Name]"**.
    - In the body:
-     - Mention that you recently reviewed their website and were impressed by a key aspect of their work (based on the scraped data).
+     - Mention that you recently reviewed their website and briefly mention that you were impressed by a key aspect of their work (based on the scraped data).
      - Reference the relevant category (called "mandate") that is the best fit.
      - Note that you have a strong network of capital partners focused on that sector.
      - Invite them to a brief conversation about their growth plans and potential alignment.
