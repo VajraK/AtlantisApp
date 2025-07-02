@@ -299,6 +299,10 @@ def process_next_row(selected_mode, websites_table, info_table, sender_account, 
                     'Total Funding Amount', 'LinkedIn', 'Phone', 'CB Rank', 'STATUS']
             complete_row = {key: row.get(key) for key in keys}
             
+            # Overwrite Email with validated_output.selected_email if available
+            if hasattr(validated_output, 'selected_email') and validated_output.selected_email:
+                complete_row['Email'] = validated_output.selected_email
+            
             if selected_mode == "Investors":
                 complete_row.pop("Total Funding Amount", None)
             
@@ -336,7 +340,6 @@ def process_next_row(selected_mode, websites_table, info_table, sender_account, 
         logger.info(f"Row {row_id}: Score >=7 and valid email fields present, sending email...")
         print(f"Row {row_id}: Score >=7 and valid email fields present, sending email...")
         try:
-
             success, msg = email_sender.send_email({
                 "selected_email": validated_output.selected_email,
                 "subject": validated_output.subject,
@@ -373,6 +376,10 @@ def process_next_row(selected_mode, websites_table, info_table, sender_account, 
         keys = ['Name', 'Note3', 'Description', 'Website', 'Email', 'Location', 
                 'Total Funding Amount', 'LinkedIn', 'Phone', 'CB Rank', 'STATUS']
         complete_row = {key: row.get(key) for key in keys}
+        
+        # Overwrite Email with validated_output.selected_email if available
+        if validated_output.selected_email:
+            complete_row['Email'] = validated_output.selected_email
         
         if selected_mode == "Investors":
             complete_row.pop("Total Funding Amount", None)
