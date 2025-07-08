@@ -42,13 +42,13 @@ Your task has three parts:
 
 3. If there is at least one strong fit (score ≥ 7):
    - Select the one category with the **highest** score.
-   - Write a concise, professional, kind email (under 300 words, ideally under 200) from **Vajra Kantor at Hope Capital Advisors**.
+   - Write a concise, professional, kind email (under 300 words, ideally under 200) from **Vajra Kantor at Atlantis Pathways**.
    - Subject line should read: **"Exploring Funding Opportunities for [Company Name]"**.
    - In the body:
-     - Mention that you recently reviewed their website and briefly mention that you were impressed by a key aspect of their work (based on the scraped data).
+     - Mention that you recently reviewed their website and briefly mention that you were impressed by a key aspect of their work (based on the scraped data)(mention the key aspect only generally).
      - Reference the relevant category (called "mandate") that is the best fit.
-     - Note that you have a strong network of capital partners focused on that sector.
-     - Invite them to a brief conversation about their growth plans and potential alignment.
+     - Note that you are contacting them on behalf of a partnered investment bank who has a strong network of capital partners focused on that sector.
+     - Ask them whether they would be interested in learning more, and if they would, I'd love to connect the partnered investment bank.
 
 Output the result as a valid JSON object with the following structure:
 
