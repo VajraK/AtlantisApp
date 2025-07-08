@@ -45,7 +45,7 @@ Your task has three parts:
    - Write a concise, professional, kind email (under 300 words, ideally under 200) from **Vajra Kantor at Atlantis Pathways**.
    - Subject line should read: **"Exploring Funding Opportunities for [Company Name]"**.
    - In the body:
-     - Mention that you recently reviewed their website and briefly mention that you were impressed by a key aspect of their work (based on the scraped data)(mention the key aspect only generally).
+     - Mention that you recently reviewed their website and VERY BRIEFLY mention that you were impressed by their work (based on the scraped data).
      - Reference the relevant category (called "mandate") that is the best fit.
      - Note that you are contacting them on behalf of a partnered investment bank who has a strong network of capital partners focused on that sector.
      - Ask them whether they would be interested in learning more, and if they would, I'd love to connect the partnered investment bank.
