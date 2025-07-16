@@ -37,7 +37,7 @@ Mandates to evaluate (format: [Acronym - Notes]):
 
 2. From the list of found and database emails, choose the one most appropriate for contacting this company about **Fund Raising**.
 
-3. Write a short **9-word email** asking whether they would like to be connected with our invesor network, **only if there are strong matches (score ≥ 7)**.
+3. Write a short **9-word email** asking whether they would like to be connected with interested investors, **only if there are strong matches (score ≥ 7)**.
 
 Output the result as a valid JSON object with the following structure:
 
