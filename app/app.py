@@ -221,7 +221,7 @@ def process_next_row(selected_mode, websites_table, info_table, sender_account, 
                 # Create in main table
                 target_table = MAIN_VENTURES_TABLE_ID if selected_mode == "Ventures" else MAIN_INVESTORS_TABLE_ID
                 keys = ['Name', 'Note3', 'Description', 'Website', 'Email', 'Location', 
-                        'Total Funding Amount', 'LinkedIn', 'Phone', 'CB Rank', 'STATUS']
+                        'Total Funding Amount', 'LinkedIn', 'Phone', 'CB Rank', 'STATUS', 'Note1']
                 complete_row = {key: row.get(key) for key in keys}
                 
                 if selected_mode == "Investors":
@@ -296,7 +296,7 @@ def process_next_row(selected_mode, websites_table, info_table, sender_account, 
             # Create in main table
             target_table = MAIN_VENTURES_TABLE_ID if selected_mode == "Ventures" else MAIN_INVESTORS_TABLE_ID
             keys = ['Name', 'Note3', 'Description', 'Website', 'Email', 'Location', 
-                    'Total Funding Amount', 'LinkedIn', 'Phone', 'CB Rank', 'STATUS']
+                    'Total Funding Amount', 'LinkedIn', 'Phone', 'CB Rank', 'STATUS', 'Note1']
             complete_row = {key: row.get(key) for key in keys}
             
             # Overwrite Email with validated_output.selected_email if available
@@ -374,7 +374,7 @@ def process_next_row(selected_mode, websites_table, info_table, sender_account, 
         # Create in main table regardless of status
         target_table = MAIN_VENTURES_TABLE_ID if selected_mode == "Ventures" else MAIN_INVESTORS_TABLE_ID
         keys = ['Name', 'Note3', 'Description', 'Website', 'Email', 'Location', 
-                'Total Funding Amount', 'LinkedIn', 'Phone', 'CB Rank', 'STATUS']
+                'Total Funding Amount', 'LinkedIn', 'Phone', 'CB Rank', 'STATUS', 'Note1']
         complete_row = {key: row.get(key) for key in keys}
         
         # Overwrite Email with validated_output.selected_email if available
