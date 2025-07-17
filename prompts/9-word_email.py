@@ -55,7 +55,7 @@ Output the result as a valid JSON object with the following structure:
     }}
   ],
   "selected_email": "someone@example.com",
-  "subject": "Your email subject here",
+  "subject": "Your email subject here (in the form of a question)",
   "email_body": "Your full email message here"
 }}
 
@@ -108,7 +108,7 @@ Output the result as a valid JSON object in this format:
     }}
   ],
   "selected_email": "someone@example.com",
-  "subject": "Your email subject here",
+  "subject": "Your email subject here ",
   "email_body": "Your full email message here"
 }}
 
