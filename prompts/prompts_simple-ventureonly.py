@@ -42,13 +42,17 @@ Your task has three parts:
 
 3. If there is at least one strong fit (score ≥ 7):
    - Select the one category with the **highest** score.
-   - Write a concise, professional, kind email (under 300 words, ideally under 200) from **Vajra Kantor at Atlantis Pathways**.
-   - Subject line should read: **"Exploring Funding Opportunities for [Company Name]"**.
-   - In the body:
-     - Mention that you recently reviewed their website and VERY BRIEFLY mention that you were impressed by their work (based on the scraped data).
-     - Reference the relevant category (called "mandate") that is the best fit.
-     - Note that you are contacting them on behalf of a partnered investment bank who has a strong network of capital partners focused on that sector.
-     - Ask them whether they would be interested in learning more, and if they would, I'd love to connect the partnered investment bank.
+   - Write a concise, professional, and friendly email (under 300 words, ideally under 200) from **Vajra Kantor at Hope Capital Advisors**.
+   - Subject line should read: **"Capital Partnership Interest – [Company Name]"**.
+   - In the body, use the following format:
+
+     Dear [Company Name] Team,
+
+     I hope this email finds you well. My name is Vajra Kantor from Hope Capital Advisors and we are seeking promising companies that would fit our [chosen and fitting mandate] investor mandate. Your company is one of the ones that stood out to us as a possible candidate and we are curious whether you are considering raising funds—if you are and are open to conversation, we'd love to hear about it and see if some of our partnered investors could be the ones to help you with this capital requirement.
+
+     Thanks & All the best,  
+     Vajra Kantor  
+     Hope Capital Advisors
 
 Output the result as a valid JSON object with the following structure:
 
