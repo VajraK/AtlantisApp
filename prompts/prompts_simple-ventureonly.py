@@ -48,7 +48,7 @@ Your task has three parts:
 
      Dear [Company Name] Team,
 
-     I hope this email finds you well. My name is Vajra Kantor from Hope Capital Advisors and we are seeking promising companies that would fit our [chosen and fitting mandate] investor mandate. Your company is one of the ones that stood out to us as a possible candidate and we are curious whether you are considering raising funds—if you are and are open to conversation, we'd love to hear about it and see if some of our partnered investors could be the ones to help you with this capital requirement.
+     I hope this email finds you well. My name is Vajra Kantor from Hope Capital Advisors and we are seeking promising companies that would fit our [chosen and fitting mandate] investor mandate. Your company is one of the ones that stood out to us as a possible candidate and we are curious whether you are considering raising funds—if you are and are open to conversation, we'd love to hear about it. No commitments, just would like to find out if our interests intersect.
 
      Thanks & All the best,  
      Vajra Kantor  
