@@ -1,6 +1,6 @@
 def base_prompt(scraped_text: str, emails: list, row_email: str, location: str, funding: str) -> str:
     return f"""
-You are an expert matchmaking assistant for an advisory firm analyzing companies and investor mandates.
+You are an expert matchmaking assistant for an investment bank analyzing companies and investor mandates.
 
 Here is the data about a company:
 Location: {location or 'Unknown'}
@@ -25,13 +25,6 @@ Your task has three parts:
 
 Only consider those with a score **7 or higher** as a "fit".
 
-When scoring, consider factors such as:
-- Industry alignment
-- Stage of company
-- Fundraising amount
-- Geography (if relevant)
-- Any specific mandate notes
-
 Mandates to evaluate (format: [Acronym - Notes]):
 {mandates}
 
@@ -42,12 +35,13 @@ Mandates to evaluate (format: [Acronym - Notes]):
 - **If uncertain, default to**: **"Dear [Company Name] Team,"**
 
 3. Write a short professional email proposing a connection, **only if there are strong matches (score ≥ 7)**.
-- Say your name is Vajra Kantor, researcher at Atlantis Pathways, an advisory firm connecting ventures with investors.
-- Mention that you are reaching out to potentially connect them with investors in your network.
-- Reference the **relevant matched mandates** (score ≥ 7) — do **not** mention acronyms.
-- Mention they can find out more about your investor mandates at **atlantispathways.com**.
-- Use a tone that is professional, succinct, and positively assertive (no exclamation marks).
-- Keep the email ideally under **200 words**, and **never more than 300 words**.
+- Say your name is Vajra Kantor, from Hope Capital Advisors, an investment bank that connects promising ventures with aligned investors.
+- Explain that you're reaching out to explore potential investor introductions based on aligned interests..
+- Reference the **relevant matched mandates** (score ≥ 7).
+- Keep the tone professional, succinct, and friendly — avoid sounding too formal or too casual.
+- Limit the email to under 200 words, and never exceed 300 words.
+- End the email with a professional sign-off that includes your name, company, and the website: https://www.hopecapitaladvisors.com/
+
 
 Output the result as a valid JSON object with the following structure:
 
